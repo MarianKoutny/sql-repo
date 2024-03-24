@@ -1,5 +1,6 @@
 /*
  * Zjistovani si prumernych mezd v danem odvetvi
+ * EDIT: 24/03
  */
 
 SELECT 
