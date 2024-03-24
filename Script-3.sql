@@ -1,14 +1,14 @@
 SELECT 
 	*
-FROM czechia_payroll cp
+FROM czechia_payroll cp;
 WHERE cp.value IS NOT NULL AND cp.value_type_code = 5958 AND industry_branch_code = 'A' AND payroll_year = 2000;
 WHERE industry_branch_code  IS NULL ;
 
-SELECT 344/4;
+
 
 SELECT * FROM countries c;
 SELECT * FROM economies e;
-WHERE `YEAR` = 2018 AND gini IS NOT NULL;
+
 
 SELECT *FROM countries c
 LEFT JOIN economies e
@@ -49,6 +49,7 @@ GROUP BY industry_branch_code, payroll_year  ;
 
 /* 
 Prumerna mzda v kazdem obdobi za dany rok, bere se prumer prepocteny s kodem 200.
+Netusim, ktery vyber co predstavuje.
  */
 
 SELECT 
