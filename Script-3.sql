@@ -1,13 +1,12 @@
+/*
+ * Zjistovani si prumernych mezd v danem odvetvi
+ */
+
 SELECT 
 	*
-FROM czechia_payroll cp;
+FROM czechia_payroll cp
 WHERE cp.value IS NOT NULL AND cp.value_type_code = 5958 AND industry_branch_code = 'A' AND payroll_year = 2000;
-WHERE industry_branch_code  IS NULL ;
 
-
-
-SELECT * FROM countries c;
-SELECT * FROM economies e;
 
 
 SELECT *FROM countries c
