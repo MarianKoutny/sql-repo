@@ -6,7 +6,7 @@ SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;
 
 SELECT * FROM czechia_price_category cpc;
-SELECT * FROM czechia_price cp
+SELECT * FROM czechia_price cp;k
 WHERE category_code = 116103 AND YEAR(date_from) = 2006 AND region_code = 'CZ010';
 
 SELECT * FROM czechia_payroll cp;
@@ -14,6 +14,9 @@ SELECT * FROM czechia_payroll_industry_branch cpib;
 SELECT * FROM czechia_payroll_calculation cpc; 
 SELECT * FROM czechia_payroll_unit cpu;
 SELECT * FROM czechia_payroll_value_type cpvt;
+
+SELECT * FROM countries c;
+SELECT * FROM economies e WHERE country = 'Czech republic' AND GDP IS NOT NULL;
 
 /*
  * Prumerna mzda v sektoru A pro rok 2000 pro fyzicky i prepocteny pocet.
@@ -123,9 +126,10 @@ JOIN czechia_payroll cpay
 	
 
 SELECT
+	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price,
 	cpc.name AS food_category,
 	cpib.name AS industry,
-	cpay.value AS average_wages,
+	-- cpay.value AS average_wages,
 	cp.value AS food_price,
 	cpay.payroll_year,
 	date_format(cp.date_from, '%d.%m.%Y') AS price_measured_from,
@@ -201,5 +205,5 @@ WHERE cpay.unit_code = 200 OR cpay.value_type_code = 5958;
 SELECT cp.id, cp.value, cp.date_from, cp.date_to, cr.name, cpc.name FROM czechia_price cp
 JOIN czechia_price_category cpc
 ON cp.category_code = cpc.code
-JOIN czechia_region cr
+LEFT JOIN czechia_region cr
 ON cp.region_code = cr.code;
