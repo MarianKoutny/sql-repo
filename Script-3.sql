@@ -5,7 +5,7 @@
 SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;
 
-SELECT * FROM czechia_price_category cpc;
+SELECT * FROM czechia_price_category cpc ORDER BY name ASC ;
 SELECT * FROM czechia_price cp;k
 WHERE category_code = 116103 AND YEAR(date_from) = 2006 AND region_code = 'CZ010';
 
@@ -32,10 +32,9 @@ WHERE cp.value IS NOT NULL AND cp.value_type_code = 5958 AND industry_branch_cod
  * Platy v jednotlivych sektorech v roce 2000 po ctvrtletich, oba prepocty.
  */
 
--- CREATE OR REPLACE VIEW mk AS (
 SELECT 
 	cp.id AS id_record,
-	cp.value AS average_salary_or_No_of_people,
+	cp.value AS average_salary,
 	cp.payroll_year,
 	cp.payroll_quarter,
 	cpib.name AS industry_branch,
@@ -51,27 +50,10 @@ JOIN czechia_payroll_unit cpu
 JOIN czechia_payroll_value_type cpvt
 	ON cp.value_type_code = cpvt.code
 WHERE cpvt.code = 5958 AND cpib.name IS NOT NULL AND payroll_year = 2000;
--- );
-
-
-/*
- * Prumerne platy (unit prepocteny+fyzicky, tedy kod 100 i 200) v jednotlivych odvetvich jdouci v x letech po sobe.
- */
-
-SELECT 
-	cpib.name AS branch, 
-	sum (value)/count (payroll_year) AS average_salary_per_year,
-	cp.payroll_year
-FROM czechia_payroll cp
-JOIN czechia_payroll_industry_branch cpib
-ON cp.industry_branch_code = cpib.code
-WHERE value_type_code = 5958 AND industry_branch_code IS NOT NULL
-GROUP BY industry_branch_code, payroll_year;
 
 
 /* 
-Prumerna mzda v kazdem obdobi za dany rok, bere se prumer prepocteny s kodem 200.
-Netusim, ktery vyber co predstavuje.
+Prumerna mzda v kazdem oboru za dany rok. (Bere se prumer prepocteny s kodem 200, netusim, ktery vyber co predstavuje)
  */
 
 SELECT 
@@ -92,13 +74,14 @@ GROUP BY cpib.code , cp.payroll_year;
 
 
 /*
- * Ceny jednotlivych potravin v danych krajich podle tydnu
+ * Ceny jednotlivych potravin v danych krajich podle roku
  */
 
+CREATE TABLE t_mk_price AS (
 SELECT 
 	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price,
 	cpc.name AS food,
-	year(cp.date_from) AS rok,
+	year(cp.date_from) AS `year`,
 	cr.name AS region
 FROM czechia_price cp
 LEFT JOIN czechia_price_category cpc
@@ -106,50 +89,15 @@ LEFT JOIN czechia_price_category cpc
 LEFT JOIN czechia_region cr
 	ON cp.region_code = cr.code
 WHERE cr.name IS NOT NULL
-GROUP BY cpc.name, cr.name, YEAR(cp.date_from);
-	
-
-SELECT 
-	cp.category_code,
-	cp.value,
-	cp.region_code
-FROM czechia_price cp
-WHERE cp.category_code = 116103 AND YEAR(cp.date_from) = 2006 AND cp.region_code IS NOT NULL
-GROUP BY cp.region_code ;
- 
-
-SELECT 
-	*
-FROM czechia_price cp
-JOIN czechia_payroll cpay
-	ON year(cp.date_from)= cpay.payroll_year;
-	
-
-SELECT
-	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price,
-	cpc.name AS food_category,
-	cpib.name AS industry,
-	-- cpay.value AS average_wages,
-	cp.value AS food_price,
-	cpay.payroll_year,
-	date_format(cp.date_from, '%d.%m.%Y') AS price_measured_from,
-	date_format(cp.date_to, '%d. %m. %Y') AS price_measured_to
-FROM czechia_price cp
-JOIN czechia_payroll cpay
-	ON year(cp.date_from) = cpay.payroll_year
-LEFT JOIN czechia_payroll_industry_branch cpib
-	ON cpay.industry_branch_code = cpib.code
-LEFT JOIN czechia_payroll_calculation cpc
-	ON cpay.calculation_code = cpc.code
-LEFT JOIN czechia_payroll_unit cpu
-	ON cpay.unit_code = cpu.code
-LEFT JOIN czechia_payroll_value_type cpvt
-	ON cpay.value_type_code = cpvt.code
-WHERE cpay.value_type_code = 5958;
+GROUP BY cpc.name, cr.name, YEAR(cp.date_from)
+);
 
 
-CREATE INDEX i_mk ON czechia_price(id);
+/*
+ * Pomocná tabulka průměrných cen v daném roce v daném kraji.
+ */
 
+SELECT * FROM t_mk_price tmp;
 
 SELECT 
     cp.id AS id,
@@ -197,9 +145,57 @@ LEFT JOIN czechia_region cr
 	ON cp.region_code = cr.code
 LEFT JOIN czechia_payroll_industry_branch cpib
 	ON cpay.industry_branch_code = cpib.code
-WHERE cpay.unit_code = 200 OR cpay.value_type_code = 5958;
+WHERE cpay.unit_code = 200 OR cpay.value_type_code = 5958
+ORDER BY cpib.name DESC ;
 
 
+/*
+ * Prumerne ceny jednotlivych potravin v roce 2006 v CR.
+ */
+
+SELECT 
+	YEAR(cp.date_from) AS 'year',
+	round(sum(cp.value)/count(YEAR(cp.date_from)),3) AS avg_price,
+	cpc.name AS food
+FROM czechia_price cp
+JOIN czechia_price_category cpc
+	ON cp.category_code = cpc.code
+WHERE YEAR(cp.date_from)= 2006
+GROUP BY cpc.name, YEAR(cp.date_from)
+ORDER BY cpc.name;
+
+/*
+ * Prumerna cena potravin v jednotlivych letech.
+ */
+
+SELECT 
+	YEAR(cp.date_from) AS 'year',
+	round(sum(cp.value)/count(YEAR(cp.date_from)),3) AS avg_price,
+	cpc.name AS food
+FROM czechia_price cp
+JOIN czechia_price_category cpc
+	ON cp.category_code = cpc.code
+WHERE cp.value IS NOT NULL
+GROUP BY cpc.name, YEAR(cp.date_from)
+ORDER BY cpc.name;
+
+
+/*
+ * Prumerne ceny potravin v danych letech a krajich
+ */
+
+SELECT 
+	YEAR(cp.date_from) AS 'year',
+	sum(cp.value)/count(YEAR(cp.date_from)) AS avg_price,
+	cpc.name AS food,
+	cr.name AS region
+FROM czechia_price cp
+JOIN czechia_price_category cpc
+	ON cp.category_code = cpc.code
+JOIN czechia_region cr
+	ON cp.region_code = cr.code
+GROUP BY YEAR(cp.date_from), cpc.name, cr.name
+ORDER BY YEAR(cp.date_from), cpc.name, cr.name ASC;
 
 
 SELECT cp.id, cp.value, cp.date_from, cp.date_to, cr.name, cpc.name FROM czechia_price cp
@@ -207,3 +203,106 @@ JOIN czechia_price_category cpc
 ON cp.category_code = cpc.code
 LEFT JOIN czechia_region cr
 ON cp.region_code = cr.code;
+
+
+SELECT
+        base.date,
+        (sum(base.confirmed)*1000000)/sum(a.population) as confirmed_per_milion
+FROM (
+          SELECT 
+                date,
+                country,
+                confirmed 
+          FROM covid19_basic cb
+         ) base
+LEFT JOIN 
+         (
+          SELECT
+                  country,
+                  population
+          FROM lookup_table lt 
+          WHERE province is null
+         ) a
+ON base.country = a.country
+GROUP BY base.date
+ORDER BY base.date;
+
+
+---------------------------------------------------------------------------------------------------------------
+
+
+
+/*
+ * Prumerne platy (unit prepocteny+fyzicky, tedy kod 100 i 200) v jednotlivych odvetvich jdouci v x letech po sobe.
+ */
+
+CREATE OR REPLACE TABLE t_mk_wage AS (
+SELECT 
+	cpib.name AS branch, 
+	round(sum (value)/count (payroll_year),0) AS avg_wage_per_branch_year,
+	cp.payroll_year
+FROM czechia_payroll cp
+JOIN czechia_payroll_industry_branch cpib
+ON cp.industry_branch_code = cpib.code
+WHERE value_type_code = 5958 AND industry_branch_code IS NOT NULL
+GROUP BY industry_branch_code, payroll_year
+);
+
+SELECT * FROM t_mk_wage;
+
+/*
+ * Ceny jednotlivych potravin v danych krajich podle roku
+ */
+
+CREATE OR REPLACE TABLE t_mk_price AS (
+SELECT 
+	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price,
+	cpc.name AS food,
+	year(cp.date_from) AS rok,
+	cr.name AS region
+FROM czechia_price cp
+LEFT JOIN czechia_price_category cpc
+	ON cp.category_code = cpc.code
+LEFT JOIN czechia_region cr
+	ON cp.region_code = cr.code
+WHERE cr.name IS NOT NULL
+GROUP BY cpc.name, cr.name, YEAR(cp.date_from)
+);
+ 
+
+/*
+ * Pomocná tabulka průměrných cen v daném roce v daném kraji.
+ */
+
+
+
+ORDER BY tmp.rok ASC, tmp.food ASC ;
+
+SELECT 
+	round(avg(tmp.avg_price),2) AS food_price,
+	tmp.food,
+	tmp.rok
+FROM t_mk_price tmp
+GROUP BY tmp.food, tmp.rok;
+
+
+DROP TABLE t_mk_price;
+
+
+SELECT * FROM t_mk_price tmp;
+SELECT * FROM t_mk_wage;
+
+CREATE OR REPLACE TABLE t_mkf AS (
+SELECT 
+	tmw.branch,
+	tmw.payroll_year,
+	tmw.avg_wage_per_branch_year,
+	tmp.food,
+	tmp.avg_price,
+	tmp.region
+FROM t_mk_wage tmw
+LEFT JOIN t_mk_price tmp ON tmw.payroll_year = tmp.rok
+);
+
+
+SELECT * FROM t_mkf tm;
