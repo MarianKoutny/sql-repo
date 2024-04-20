@@ -301,8 +301,53 @@ SELECT
 	tmp.avg_price,
 	tmp.region
 FROM t_mk_wage tmw
-LEFT JOIN t_mk_price tmp ON tmw.payroll_year = tmp.rok
+JOIN t_mk_price tmp ON tmw.payroll_year = tmp.rok
 );
 
 
-SELECT * FROM t_mkf tm;
+
+SELECT * FROM t_mkf tm
+WHERE tm.avg_price IS NOT NULL;
+
+ORDER BY tm.payroll_year ASC ;
+WHERE tm.branch = 'Doprava a skladování';
+
+-- CREATE INDEX i_tm_payroll_year ON t_mkf (payroll_year);
+-- DROP INDEX i_tm_payroll_year ON t_mkf;
+
+SELECT
+	tm.branch, 
+	tm.avg_wage_per_branch_year AS wage,
+	tm.payroll_year AS cur_year,
+	tm2.payroll_year AS prev_year,
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth_pct
+FROM t_mkf tm
+JOIN t_mkf tm2 
+ON tm.payroll_year -1 = tm2.payroll_year 
+AND tm.branch = tm2.branch
+AND tm.payroll_year BETWEEN 2000 AND 2005
+ORDER BY tm.branch, tm.payroll_year;	
+
+
+SELECT e.country, e.year, e2.YEAR as year_prev, -- pozor, chyba v referenčním příkladu
+    round( ( e.GDP - e2.GDP ) / e2.GDP * 100, 2 ) as GDP_growth,
+    round( ( e.population - e2.population ) / e2.population * 100, 2) as pop_growth_percent
+FROM economies e 
+JOIN economies e2 
+    ON e.country = e2.country 
+    AND e.YEAR - 1 = e2.YEAR
+    AND e.year < 2020;
+     
+
+
+SELECT 
+	e.country,
+	e.`year`,
+	e.GDP 
+FROM economies e
+JOIN countries c ON e.country = c.country 
+WHERE c.government_type NOT LIKE '%Territory%' and c.government_type NOT LIKE '%of%'
+and c.government_type NOT LIKE '%administrated%'and c.government_type NOT LIKE '%occupied%'
+AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 2001 AND 2020
+GROUP BY e.`year`, e.GDP
+ORDER BY e.country ASC, e.`year` DESC;
