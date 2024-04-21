@@ -80,11 +80,13 @@ ORDER BY cpc.name;
 
 
 -------------------------------------------------------------------------------------------------------------------
-
+/*
+3. Vytvoření pomocných tabulek, pomoci kterých se dostanu k finálním tabulkám:
+ */
 
 
 /*
- * Prumerne platy (unit prepocteny+fyzicky, tedy kod 100 i 200) v jednotlivych odvetvich jdouci v x letech po sobe.
+3a) Vývoj průměrných platů v jednotlivých odvětvích - pomocná tabulka t_mk_wage:
  */
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
@@ -101,13 +103,14 @@ GROUP BY industry_branch_code, payroll_year
 
 SELECT * FROM t_mk_wage tmw;
 
+
 /*
- * Ceny jednotlivych potravin v danych krajich podle roku
+3b) Vývoj cen jednotlivých potravin v daných letech a krajích - tabulka t_mk_price:
  */
 
 CREATE OR REPLACE TABLE t_mk_price AS (
 SELECT 
-	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price,
+	sum(cp.value)/count(YEAR(cp.date_from)) AS avg_price,
 	cpc.name AS food,
 	year(cp.date_from) AS rok,
 	cr.name AS region
@@ -124,6 +127,10 @@ ORDER BY rok, food
 SELECT * FROM t_mk_price tmp;
 
 
+/*
+3c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - tabulka t_mk_extra:
+ */
+
 CREATE OR REPLACE TABLE t_mk_extra AS (
 SELECT 
 	round(sum(tmp.avg_price)/count(tmp.rok),2) AS avg_price_year,
@@ -135,28 +142,14 @@ GROUP BY tmp.food, tmp.rok
 ORDER BY rok, food
 );
  
-SELECT * FROM t_mk_extra tme;
-
-/*
- * Pomocná tabulka průměrných cen v daném roce v daném kraji.
- */
-
-
-SELECT 
-	round(avg(tmp.avg_price),2) AS food_price,
-	tmp.food,
-	tmp.rok
-FROM t_mk_price tmp
-GROUP BY tmp.food, tmp.rok;
-
-
--- DROP TABLE t_mk_price;
-
-
-SELECT * FROM t_mk_price tmp;
 
 SELECT * FROM t_mk_wage tmw;
 SELECT * FROM t_mk_extra tme;
+
+
+/*
+4. Vytvoření finální tabulky čislo 1:
+ */
 
 CREATE OR REPLACE TABLE t_mkf AS (
 SELECT
@@ -170,7 +163,8 @@ LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
 );
 
 
-SELECT * FROM t_mkf tm;
+SELECT * FROM t_mkf tm
+ORDER BY tm.branch;
 
 
 ALTER TABLE t_mkf 
@@ -215,6 +209,13 @@ FROM t_mkf tm
 WHERE tm.food = 'Chléb konzumní kmínový' AND tm.payroll_year IN (2006)
 ORDER BY tm.branch, tm.payroll_year, tm.food;
 
+/*SELECT 
+	round(avg(tmp.avg_price),2) AS food_price,
+	tmp.food,
+	tmp.rok
+FROM t_mk_price tmp
+GROUP BY tmp.food, tmp.rok;
+*/
 
 /*
 SELECT DISTINCT 
