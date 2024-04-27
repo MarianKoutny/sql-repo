@@ -344,6 +344,7 @@ SELECT DISTINCT
 	tm2.payroll_year AS previous_y,
 	tm.food,
 	tm.avg_price_year,
+	tm2.avg_price_year,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
 FROM t_mkf tm
 JOIN t_mkf tm2 ON tm.food = tm2.food
@@ -364,5 +365,13 @@ WHERE tm.food = 'Banány žluté' AND tm.payroll_year IN (2006,2018);
  * Otázka 4 
 */
 
-
-
+SELECT DISTINCT 
+	tm.branch,
+	tm.payroll_year,
+	tm.avg_wage_per_branch_year,
+	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) AS price_raise,
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise
+FROM t_mkf tm
+JOIN t_mkf tm2 ON tm.branch = tm2.branch
+	AND tm.food = tm2.food
+    AND tm.payroll_year -1 = tm2.payroll_year;
