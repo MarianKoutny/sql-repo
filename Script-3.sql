@@ -392,19 +392,20 @@ SELECT * FROM t_secondary ts;
 
 SELECT
 	tm.branch,
-	tm.payroll_year,
-	tm.avg_wage_per_branch_year,
-	tm.food,
-	ts.country,
-	ts.GDP_growth,
-	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth AS price_GDP_diff,
-	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2) - ts.GDP_growth AS wage_GDP_diff,
-	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS price_raise,
-	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise,
-	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
+	tm.payroll_year AS `year`,
+	tm.avg_wage_per_branch_year AS salary,
+	tm.food AS item,
+	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS pr_up,
+	ts.GDP_growth AS GDPup,
+	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth AS pr_GDP_d,
+	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS wage_up,
+	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2) - ts.GDP_growth AS w_GDP_d
+--	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
 FROM t_mkf tm
 JOIN t_mkf tm2 ON tm.branch = tm2.branch
 	AND tm.food = tm2.food
     AND tm.payroll_year -1 = tm2.payroll_year
 JOIN t_secondary ts ON tm.payroll_year = ts.cur_year
-WHERE ts.country = 'Czech republic';
+WHERE ts.country = 'Czech republic'
+ORDER BY round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth DESC,
+round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2) - ts.GDP_growth DESC;
