@@ -365,13 +365,46 @@ WHERE tm.food = 'Banány žluté' AND tm.payroll_year IN (2006,2018);
  * Otázka 4 
 */
 
-SELECT DISTINCT 
+SELECT 
 	tm.branch,
 	tm.payroll_year,
 	tm.avg_wage_per_branch_year,
+	tm.food,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) AS price_raise,
-	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise,
+	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
 FROM t_mkf tm
 JOIN t_mkf tm2 ON tm.branch = tm2.branch
 	AND tm.food = tm2.food
-    AND tm.payroll_year -1 = tm2.payroll_year;
+    AND tm.payroll_year -1 = tm2.payroll_year
+WHERE round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) >10
+ORDER BY tm.payroll_year;
+
+
+
+/*
+ * Otazka 5
+*/
+
+SELECT * FROM t_mkf tm;
+WHERE tm.food = 'Papriky';
+SELECT * FROM t_secondary ts;
+
+SELECT
+	tm.branch,
+	tm.payroll_year,
+	tm.avg_wage_per_branch_year,
+	tm.food,
+	ts.country,
+	ts.GDP_growth,
+	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth AS price_GDP_diff,
+	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2) - ts.GDP_growth AS wage_GDP_diff,
+	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS price_raise,
+	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise,
+	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
+FROM t_mkf tm
+JOIN t_mkf tm2 ON tm.branch = tm2.branch
+	AND tm.food = tm2.food
+    AND tm.payroll_year -1 = tm2.payroll_year
+JOIN t_secondary ts ON tm.payroll_year = ts.cur_year
+WHERE ts.country = 'Czech republic';
