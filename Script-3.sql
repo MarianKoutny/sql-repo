@@ -312,11 +312,13 @@ FROM t_mkf tm
 JOIN t_mkf tm2 
 ON tm.branch = tm2.branch
     AND tm.payroll_year -1 = tm2.payroll_year
+-- WHERE round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 )<0
+-- AND tm.payroll_year NOT IN (2021,2020,2009,2013)
 ORDER BY tm.branch, tm.payroll_year;
 
 
 /*
- * Otázka 
+ * Otázka 2
  */
 
 SELECT 
@@ -330,3 +332,37 @@ FROM t_mkf tm
 WHERE tm.food IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
 AND tm.payroll_year IN (2006,2018)
 ORDER BY tm.branch,tm.food,tm.payroll_year;
+
+
+/*
+ * Otázka 3
+*/
+
+
+SELECT DISTINCT 
+	tm.payroll_year,
+	tm2.payroll_year AS previous_y,
+	tm.food,
+	tm.avg_price_year,
+	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
+FROM t_mkf tm
+JOIN t_mkf tm2 ON tm.food = tm2.food
+AND tm.payroll_year -12 = tm2.payroll_year
+WHERE tm.avg_price_year IS NOT NULL
+ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.food, tm.payroll_year;
+
+SELECT DISTINCT
+	tm.payroll_year,
+	tm.food,
+	tm.avg_price_year
+FROM t_mkf tm
+WHERE tm.food = 'Banány žluté' AND tm.payroll_year IN (2006,2018);
+
+
+
+/*
+ * Otázka 4 
+*/
+
+
+
