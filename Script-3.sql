@@ -300,7 +300,7 @@ FROM t_mkf tm;
 SELECT DISTINCT
 	tm.branch,
 	tm.payroll_year AS cur_year,
-	tm2.payroll_year AS prev_year,
+--	tm2.payroll_year AS prev_year,
 	tm.avg_wage_per_branch_year AS salary,
 	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth,
 	CASE 
@@ -312,7 +312,7 @@ FROM t_mkf tm
 JOIN t_mkf tm2 
 ON tm.branch = tm2.branch
     AND tm.payroll_year -1 = tm2.payroll_year
--- WHERE round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 )<0
+WHERE round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 )<0
 -- AND tm.payroll_year NOT IN (2021,2020,2009,2013)
 ORDER BY tm.branch, tm.payroll_year;
 
@@ -343,8 +343,8 @@ SELECT DISTINCT
 	tm.payroll_year,
 	tm2.payroll_year AS previous_y,
 	tm.food,
-	tm.avg_price_year,
-	tm2.avg_price_year,
+	tm2.avg_price_year AS price_2006,
+	tm.avg_price_year AS price_2018,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
 FROM t_mkf tm
 JOIN t_mkf tm2 ON tm.food = tm2.food
@@ -377,7 +377,7 @@ FROM t_mkf tm
 JOIN t_mkf tm2 ON tm.branch = tm2.branch
 	AND tm.food = tm2.food
     AND tm.payroll_year -1 = tm2.payroll_year
-WHERE round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) >10
+WHERE round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2)-round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2)>10
 ORDER BY tm.payroll_year;
 
 
