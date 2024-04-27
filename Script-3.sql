@@ -164,7 +164,7 @@ LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
 
 
 SELECT * FROM t_mkf tm
-ORDER BY tm.branch;
+ORDER BY tm.payroll_year, tm.branch;
 
 
 ALTER TABLE t_mkf 
@@ -172,11 +172,21 @@ MODIFY COLUMN branch varchar(70);
 
 CREATE OR REPLACE INDEX i_tm_branch ON t_mkf(branch);
 
-SELECT 
+
+/*
+ * Rust mezd v jednotlivych sektorech mezi lety 2000 a 2021
+ */
+SELECT DISTINCT 
 	tm.branch,
-	tm.avg_wage_per_branch_year 	
+	tm.avg_wage_per_branch_year,
+	tm.payroll_year AS cur_year,
+	tm2.payroll_year AS prev_year,
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth_pct
 FROM t_mkf tm
-WHERE tm.payroll_year IN (2001,2021);
+JOIN t_mkf tm2 ON tm.payroll_year -1 = tm2.payroll_year
+AND tm.branch = tm2.branch
+ORDER BY tm.branch, tm.payroll_year;
+
 
 
 SELECT
@@ -236,7 +246,10 @@ CREATE OR REPLACE TABLE t_ec AS (
 SELECT 
 	e.country,
 	e.`year`,
-	e.GDP 
+	e.GDP,
+	e.gini,
+	e.population,
+	c.continent
 FROM economies e
 JOIN countries c ON e.country = c.country 
 WHERE c.government_type NOT LIKE '%Territory%' and c.government_type NOT LIKE '%of%'
@@ -249,22 +262,71 @@ ORDER BY e.country ASC, e.`year` DESC
 SELECT * FROM t_ec te;
 
 CREATE OR REPLACE TABLE t_secondary AS (
-SELECT te.country, te.GDP, te.year, te2.YEAR as year_prev, -- pozor, chyba v referenčním příkladu
-    round( ( te.GDP - te2.GDP ) / te2.GDP * 100, 2 ) as GDP_growth
+SELECT 
+	te.country, 
+	round(te.GDP,0) AS GDP,
+	te.YEAR AS cur_year, 
+	te2.YEAR as year_prev,
+	round( ( te.GDP - te2.GDP ) / te2.GDP * 100, 2 ) as GDP_growth,
+	te.population,
+	te.gini
 FROM t_ec te 
 JOIN t_ec te2 
     ON te.country = te2.country 
     AND te.YEAR - 1 = te2.YEAR
     AND te.year <= 2020
-);
+WHERE te.continent = 'Europe');
+
+DROP TABLE t_mk_extra;
+DROP TABLE t_mk_price;
+DROP TABLE t_mk_wage;
+DROP TABLE t_ec;
 
 SELECT * FROM t_secondary ts;
+SELECT DISTINCT payroll_year, branch,avg_wage_per_branch_year  FROM t_mkf tm
+WHERE tm.branch = 'Administrativní a podpůrné činnosti'
+ORDER BY payroll_year ;
 
 SELECT * FROM t_secondary ts 
-WHERE country = "Czech republic" AND ts.`year` BETWEEN 2001 AND 2020;
+WHERE country = "Czech republic" AND ts.cur_year BETWEEN 2001 AND 2020;
 
-SELECT DISTINCT 
-	avg_price,
-	food,
-	payroll_year
+SELECT *
 FROM t_mkf tm;
+
+/*
+ * Otázka 1 
+ */
+
+SELECT DISTINCT
+	tm.branch,
+	tm.payroll_year AS cur_year,
+	tm2.payroll_year AS prev_year,
+	tm.avg_wage_per_branch_year AS salary,
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth,
+	CASE 
+		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) > 0 THEN 'Mzda roste'
+		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) = 0 THEN 'Mzda stagnuje'
+		ELSE 'Mzda klesá'
+	END AS Increase_Decrease_of_salary
+FROM t_mkf tm
+JOIN t_mkf tm2 
+ON tm.branch = tm2.branch
+    AND tm.payroll_year -1 = tm2.payroll_year
+ORDER BY tm.branch, tm.payroll_year;
+
+
+/*
+ * Otázka 
+ */
+
+SELECT 
+	tm.branch,
+	tm.payroll_year,
+	tm.avg_wage_per_branch_year,
+	tm.food,
+	tm.avg_price_year,
+	round (tm.avg_wage_per_branch_year/tm.avg_price_year,0) AS how_much
+FROM t_mkf tm
+WHERE tm.food IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
+AND tm.payroll_year IN (2006,2018)
+ORDER BY tm.branch,tm.food,tm.payroll_year;
