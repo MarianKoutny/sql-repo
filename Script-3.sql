@@ -319,7 +319,7 @@ tm.branch, tm.payroll_year;
 
 
 /*
- * b) Růst/pokles mezd v jednotlivých oborech po letech 2000 až 2021
+ * b) Růst/pokles mezd v odvětvích po jednoletých intervalech (2000 až 2021)
  */
 
 SELECT DISTINCT 
@@ -341,7 +341,7 @@ ORDER BY tm.branch, tm.payroll_year;
 
 
 /*
- * c) Obory a roky, v kterých mzdy klesají
+ * c) Odvětví a roky, v kterých mzdy klesají
  */
 
 SELECT DISTINCT
