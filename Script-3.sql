@@ -255,7 +255,7 @@ FROM economies e
 JOIN countries c ON e.country = c.country 
 WHERE c.government_type NOT LIKE '%Territory%' and c.government_type NOT LIKE '%of%'
 and c.government_type NOT LIKE '%administrated%'and c.government_type NOT LIKE '%occupied%'
-AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 1999 AND 2020
+AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 1999 AND 2019
 GROUP BY e.`year`, e.GDP
 ORDER BY e.country ASC, e.`year` DESC 
 );
@@ -275,7 +275,7 @@ FROM t_ec te
 JOIN t_ec te2 
     ON te.country = te2.country 
     AND te.YEAR - 1 = te2.YEAR
-    AND te.year <= 2020
+    AND te.year <= 2019
 WHERE te.continent = 'Europe');
 
 DROP TABLE t_mk_extra;
@@ -292,7 +292,9 @@ SELECT * FROM t_secondary ts
 WHERE country = "Czech republic" AND ts.cur_year BETWEEN 2001 AND 2020;
 
 SELECT *
-FROM t_mkf tm;
+FROM t_mkf tm
+WHERE tm.avg_price_year IS NOT NULL 
+ORDER BY tm.payroll_year DESC ;
 
 /*
  * 1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
@@ -389,14 +391,14 @@ ORDER BY tm.branch,tm.food,tm.payroll_year;
 
 
 /*
- * Otázka 3
+ * 3. Která kategorie potravin zdražuje nejpomaleji (je u ní nejnižší percentuální meziroční nárůst)?
 */
 
 
 SELECT DISTINCT 
-	tm.payroll_year,
-	tm2.payroll_year AS previous_y,
-	tm.food,
+-- 	tm2.payroll_year AS start_year,
+-- 	tm.payroll_year AS end_year,
+	tm.food AS item,
 	tm2.avg_price_year AS price_2006,
 	tm.avg_price_year AS price_2018,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
@@ -406,25 +408,18 @@ AND tm.payroll_year -12 = tm2.payroll_year
 WHERE tm.avg_price_year IS NOT NULL
 ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.food, tm.payroll_year;
 
-SELECT DISTINCT
-	tm.payroll_year,
-	tm.food,
-	tm.avg_price_year
-FROM t_mkf tm
-WHERE tm.food = 'Banány žluté' AND tm.payroll_year IN (2006,2018);
-
 
 
 /*
- * Otázka 4 
+ * 4. Existuje rok, ve kterém byl meziroční nárůst cen potravin výrazně vyšší než růst mezd (větší než 10 %)?
 */
 
 SELECT 
 	tm.branch,
 	tm.payroll_year,
-	tm.avg_wage_per_branch_year,
 	tm.food,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) AS price_raise,
+	tm.avg_wage_per_branch_year,
 	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
 FROM t_mkf tm
@@ -432,17 +427,23 @@ JOIN t_mkf tm2 ON tm.branch = tm2.branch
 	AND tm.food = tm2.food
     AND tm.payroll_year -1 = tm2.payroll_year
 WHERE round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2)-round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2)>10
-ORDER BY tm.payroll_year;
+ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC,
+tm.payroll_year;
 
 
 
 /*
- * Otazka 5
+ *5. Má výška HDP vliv na změny ve mzdách a cenách potravin? Neboli, pokud HDP vzroste výrazněji v jednom roce, 
+ *projeví se to na cenách potravin či mzdách ve stejném nebo násdujícím roce výraznějším růstem?
 */
 
-SELECT * FROM t_mkf tm;
+SELECT * FROM t_mkf tm
 WHERE tm.food = 'Papriky';
 SELECT * FROM t_secondary ts;
+WHERE ts.cur_year = 1999;
+SELECT
+count (DISTINCT ts.country)
+FROM t_secondary ts;
 
 SELECT
 	tm.branch,
