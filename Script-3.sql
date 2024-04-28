@@ -301,8 +301,25 @@ ORDER BY tm.payroll_year DESC ;
  */
 
 
+
 /*
- * a) Růst/pokles mezd v jednotlivých oborech po letech 2000 až 2021
+ * a) Celkový růst v odvětvích vztažený na první a poslední porovnávané období (roky 2000 a 2021)
+ */
+
+SELECT DISTINCT 
+	tm.branch,
+	tm.avg_wage_per_branch_year AS salary_2021,
+	tm2.avg_wage_per_branch_year AS salary_2000,
+	round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) as tota_salary_growth_percentage
+FROM t_mkf tm
+JOIN t_mkf tm2 ON tm.payroll_year -21 = tm2.payroll_year
+AND tm.branch = tm2.branch
+ORDER BY round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC, 
+tm.branch, tm.payroll_year;
+
+
+/*
+ * b) Růst/pokles mezd v jednotlivých oborech po letech 2000 až 2021
  */
 
 SELECT DISTINCT 
@@ -324,7 +341,7 @@ ORDER BY tm.branch, tm.payroll_year;
 
 
 /*
- * b) Obory a roky, v kterých mzdy klesají
+ * c) Obory a roky, v kterých mzdy klesají
  */
 
 SELECT DISTINCT
@@ -345,29 +362,6 @@ ON tm.branch = tm2.branch
     AND tm.payroll_year -1 = tm2.payroll_year
 WHERE round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 )<0
 ORDER BY round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) ASC, 
-tm.branch, tm.payroll_year;
-
-
-/*
- * c) Celkový růst v odvětvích vztažený na první a poslední porovnávané období (roky 2000 a 2021)
- */
-
-SELECT DISTINCT 
-	tm.branch,
-	tm.payroll_year AS cur_year,
-	tm.avg_wage_per_branch_year AS salary_cur_year,
-	tm2.payroll_year AS prev_year,
-	tm2.avg_wage_per_branch_year AS salary_prev_year,
-	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_raise_pct,
-	CASE 
-		WHEN round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) > 0 THEN 'Mzda roste'
-		WHEN round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) = 0 THEN 'Mzda stagnuje'
-		WHEN round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) < 0 THEN 'Mzda klesá'
-	END AS Increase_Decrease_of_salary
-FROM t_mkf tm
-JOIN t_mkf tm2 ON tm.payroll_year -21 = tm2.payroll_year
-AND tm.branch = tm2.branch
-ORDER BY round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC, 
 tm.branch, tm.payroll_year;
 
 
