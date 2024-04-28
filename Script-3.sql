@@ -163,7 +163,7 @@ LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
 );
 
 
-SELECT * FROM t_mkf tm
+SELECT * FROM t_mkf tm;
 ORDER BY tm.payroll_year, tm.branch;
 
 
@@ -178,9 +178,10 @@ CREATE OR REPLACE INDEX i_tm_branch ON t_mkf(branch);
  */
 SELECT DISTINCT 
 	tm.branch,
-	tm.avg_wage_per_branch_year,
-	tm.payroll_year AS cur_year,
-	tm2.payroll_year AS prev_year,
+	tm.payroll_year AS current_year,
+	tm.avg_wage_per_branch_year AS salary_current_year,
+	tm2.payroll_year AS previous_year,
+	tm2.avg_wage_per_branch_year AS salary_previous_year,
 	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth_pct
 FROM t_mkf tm
 JOIN t_mkf tm2 ON tm.payroll_year -1 = tm2.payroll_year
@@ -294,31 +295,84 @@ SELECT *
 FROM t_mkf tm;
 
 /*
- * Otázka 1 
+ * 1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
+ */
+
+
+/*
+ * a) Růst/pokles mezd v jednotlivých oborech po letech 2000 až 2021
+ */
+
+SELECT DISTINCT 
+	tm.branch,
+	tm.payroll_year AS current_year,
+	tm.avg_wage_per_branch_year AS salary_current_year,
+	tm2.payroll_year AS previous_year,
+	tm2.avg_wage_per_branch_year AS salary_previous_year,
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_raise_pct,
+	CASE 
+		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) > 0 THEN 'Mzda roste'
+		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) = 0 THEN 'Mzda stagnuje'
+		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) < 0 THEN 'Mzda klesá'
+	END AS Increase_Decrease_of_salary
+FROM t_mkf tm
+JOIN t_mkf tm2 ON tm.payroll_year -1 = tm2.payroll_year
+AND tm.branch = tm2.branch
+ORDER BY tm.branch, tm.payroll_year;
+
+
+/*
+ * b) Obory a roky, v kterých mzdy klesají
  */
 
 SELECT DISTINCT
 	tm.branch,
 	tm.payroll_year AS cur_year,
---	tm2.payroll_year AS prev_year,
-	tm.avg_wage_per_branch_year AS salary,
+	tm.avg_wage_per_branch_year AS salary_cur_year,
+	tm2.payroll_year AS prev_year,
+	tm2.avg_wage_per_branch_year AS salary_prev_year,
 	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth,
 	CASE 
-		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) > 0 THEN 'Mzda roste'
-		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) = 0 THEN 'Mzda stagnuje'
-		ELSE 'Mzda klesá'
+		WHEN round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) > 0 THEN 'Mzda roste'
+		WHEN round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) = 0 THEN 'Mzda stagnuje'
+		WHEN round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) < 0 THEN 'Mzda klesá'
 	END AS Increase_Decrease_of_salary
 FROM t_mkf tm
 JOIN t_mkf tm2 
 ON tm.branch = tm2.branch
     AND tm.payroll_year -1 = tm2.payroll_year
 WHERE round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 )<0
--- AND tm.payroll_year NOT IN (2021,2020,2009,2013)
-ORDER BY tm.branch, tm.payroll_year;
+ORDER BY round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) ASC, 
+tm.branch, tm.payroll_year;
 
 
 /*
- * Otázka 2
+ * c) Celkový růst v odvětvích vztažený na první a poslední porovnávané období (roky 2000 a 2021)
+ */
+
+SELECT DISTINCT 
+	tm.branch,
+	tm.payroll_year AS cur_year,
+	tm.avg_wage_per_branch_year AS salary_cur_year,
+	tm2.payroll_year AS prev_year,
+	tm2.avg_wage_per_branch_year AS salary_prev_year,
+	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_raise_pct,
+	CASE 
+		WHEN round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) > 0 THEN 'Mzda roste'
+		WHEN round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) = 0 THEN 'Mzda stagnuje'
+		WHEN round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) < 0 THEN 'Mzda klesá'
+	END AS Increase_Decrease_of_salary
+FROM t_mkf tm
+JOIN t_mkf tm2 ON tm.payroll_year -21 = tm2.payroll_year
+AND tm.branch = tm2.branch
+ORDER BY round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC, 
+tm.branch, tm.payroll_year;
+
+
+
+
+/*
+ * 2. Kolik je možné si koupit litrů mléka a kilogramů chleba za první a poslední srovnatelné období v dostupných datech cen a mezd?
  */
 
 SELECT 
