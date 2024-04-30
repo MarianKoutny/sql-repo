@@ -3,7 +3,7 @@
  */
 
 /*
-1. Výpis datových setů potřebných k projektu:
+1. Výpis datových setů potřebných k projektu
  */
 SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;
@@ -18,12 +18,12 @@ SELECT * FROM countries c;
 SELECT * FROM economies e;
 -------------------------------------------------------------------------------------------------------------------
 /*
-2. Vytvoření pomocných tabulek, pomoci kterých se dostanu k první finální tabulce:
+2. Vytvoření pomocných tabulek, pomoci kterých se dostanu k první finální tabulce
  */
 
 
 /*
-2a) Vývoj průměrných platů v jednotlivých odvětvích - pomocná tabulka t_mk_wage:
+2a) Vývoj průměrných platů v jednotlivých odvětvích - pomocná tabulka t_mk_wage
  */
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
@@ -42,7 +42,7 @@ SELECT * FROM t_mk_wage tmw;
 
 
 /*
-2b) Vývoj cen jednotlivých potravin v daných letech a krajích - tabulka t_mk_price:
+2b) Vývoj cen jednotlivých potravin v daných letech a krajích - tabulka t_mk_price
  */
 
 CREATE OR REPLACE TABLE t_mk_price AS (
@@ -65,7 +65,7 @@ SELECT * FROM t_mk_price tmp;
 
 
 /*
-2c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - pomocná tabulka t_mk_price_general:
+2c) Vývoj cen potravin v jednotlivých letech (průmerováno za všechny kraje) - pomocná tabulka t_mk_price_general
  */
 
 CREATE OR REPLACE TABLE t_mk_price_general AS (
@@ -99,7 +99,7 @@ LEFT JOIN t_mk_price_general tmg ON tmw.payroll_year = tmg.rok
 );
 
 /*
-3a) Modifikace sloupce a vytvoření indexu:
+3a) Modifikace sloupce a vytvoření indexu
  */
 
 ALTER TABLE t_marian_koutny_project_sql_primary_final 
@@ -109,7 +109,7 @@ CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final
 
 
 /*
-4. Vytvoření pomocné tabulky pro sekundární tabulku projektu:
+4. Vytvoření pomocné tabulky pro sekundární tabulku projektu
  */
 
 CREATE OR REPLACE TABLE t_ec AS (
@@ -132,7 +132,7 @@ SELECT * FROM t_ec te;
 
 
 /*
-5. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final:
+5. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final
  */
 
 CREATE OR REPLACE TABLE t_marian_koutny_project_sql_secondary_final AS (
@@ -174,7 +174,7 @@ VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
  */
 
 /*
- 1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
+ 1. ROSTOU V PRŮBĚHU LET MZDY VE VŠECH ODVĚTVÍCH, NEBO V NĚKTERÝCH KLESAJÍ?
  */
 
 
@@ -286,7 +286,7 @@ ORDER BY count (*) DESC;
 
 
 /*
- * 2. Kolik je možné si koupit litrů mléka a kilogramů chleba za první a poslední srovnatelné období v dostupných datech cen a mezd?
+ * 2. KOLIK JE MOŽNÉ SI KOUPIT LITRŮ MLÉKA A KILOGRAMŮ CHLEBA ZA PRVNÍ A POSLEDNÍ SROVNATELNÉ OBDOBÍ V DOSTUPNÝCH DATECH CEN A MEZD?
  */
 
 -- 2.1 Přehled, kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
@@ -334,7 +334,7 @@ ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_pri
 
 
 /*
- * 3. Která kategorie potravin zdražuje nejpomaleji (je u ní nejnižší percentuální meziroční nárůst)?
+ * 3. KTERÁ KATEGORIE POTRAVIN ZDRAŽUJE NEJPOMALEJI (JE U NÍ NEJNIŽŠÍ PERCENTUÁLNÍ MEZIROČNÍ NÁRŮST)?
 */
 
 -- pozn. Jakostní víno je z výběru odebráno pro příliš malý vzorek
@@ -374,7 +374,7 @@ ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year 
 
 
 /*
- * 4. Existuje rok, ve kterém byl meziroční nárůst cen potravin výrazně vyšší než růst mezd (větší než 10 %)?
+ * 4. EXISTUJE ROK, VE KTERÉM BYL MEZIROČNÍ NÁRŮST CEN POTRAVIN VÝRAZNĚ VYŠŠÍ NEŽ RŮST MEZD (VĚTŠÍ NEŽ 10 %)?
 */
 
 
@@ -384,7 +384,6 @@ SELECT
 	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
--- WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year;
 
 
@@ -459,8 +458,8 @@ tm.payroll_year;
 
 
 /*
- *5. Má výška HDP vliv na změny ve mzdách a cenách potravin? Neboli, pokud HDP vzroste výrazněji v jednom roce, 
- *projeví se to na cenách potravin či mzdách ve stejném nebo násdujícím roce výraznějším růstem?
+5. MÁ VÝŠKA HDP VLIV NA ZMĚNY VE MZDÁCH A CENÁCH POTRAVIN? NEBOLI, POKUD HDP VZROSTE VÝRAZNĚJI V JEDNOM ROCE, 
+   PROJEVÍ SE TO NA CENÁCH POTRAVIN ČI MZDÁCH VE STEJNÉM NEBO NÁSDUJÍCÍM ROCE VÝRAZNĚJŠÍM RŮSTEM?
 */
 
 SELECT * FROM countries c WHERE continent = 'Europe' AND government_type NOT LIKE '%Dependent%'
