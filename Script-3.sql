@@ -1,12 +1,10 @@
 /*
- * SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
+ SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
  */
-
 
 /*
 1. Výpis tabulek potřebných k projektu:
  */
-
 SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;
 SELECT * FROM czechia_price_category cpc ORDER BY name ASC ;
@@ -18,10 +16,9 @@ SELECT * FROM czechia_payroll_unit cpu;
 SELECT * FROM czechia_payroll_value_type cpvt;
 SELECT * FROM countries c;
 SELECT * FROM economies e;
-
 -------------------------------------------------------------------------------------------------------------------
 /*
-2. Vytvoření pomocných tabulek, pomoci kterých se dostanu k finálním tabulkám:
+2. Vytvoření pomocných tabulek, pomoci kterých se dostanu k první finální tabulce:
  */
 
 
@@ -53,7 +50,7 @@ SELECT
 	cpc.name AS food,
 	year(cp.date_from) AS rok,
 	cr.name AS region,
-	sum(cp.value)/count(YEAR(cp.date_from)) AS avg_price
+	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price
 FROM czechia_price cp
 JOIN czechia_price_category cpc
 	ON cp.category_code = cpc.code
@@ -68,7 +65,7 @@ SELECT * FROM t_mk_price tmp;
 
 
 /*
-2c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - tabulka t_mk_extra:
+2c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - pomocná tabulka t_mk_extra:
  */
 
 CREATE OR REPLACE TABLE t_mk_extra AS (
@@ -87,7 +84,7 @@ SELECT * FROM t_mk_extra tme;
 
 
 /*
-4. Vytvoření finální tabulky čislo 1:
+3. Vytvoření první finální tabulky t_Marian_Koutny_project_SQL_primary_final:
  */
 
 CREATE OR REPLACE TABLE t_Marian_Koutny_project_SQL_primary_final AS (
@@ -101,21 +98,22 @@ FROM t_mk_wage tmw
 LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
 );
 
+/*
+3a) Modifikace sloupce a vytvoření indexu:
+ */
 
 ALTER TABLE t_marian_koutny_project_sql_primary_final 
 MODIFY COLUMN branch varchar(70);
 
 CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final(branch);
 
+SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
 
-SELECT * FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.foodstuff IS NOT NULL
-ORDER BY tm.payroll_year, tm.branch, tm.foodstuff;
+
 
 /*
- * Rust mezd v jednotlivych sektorech mezi lety 2000 a 2021
+4. Vytvoření pomocné tabulky pro sekundární tabulku projektu:
  */
-
 
 CREATE OR REPLACE TABLE t_ec AS (
 SELECT 
@@ -135,6 +133,11 @@ ORDER BY e.country ASC, e.`year` DESC
 
 SELECT * FROM t_ec te;
 
+
+/*
+5. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final:
+ */
+
 CREATE OR REPLACE TABLE t_marian_koutny_project_sql_secondary_final AS (
 SELECT 
 	te.country, 
@@ -153,6 +156,10 @@ WHERE te.continent = 'Europe');
 
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
 
+
+/*
+5a) DROP již nepotřebných pomocných tabulek
+ */
 DROP TABLE t_mk_extra;
 DROP TABLE t_mk_price;
 DROP TABLE t_mk_wage;
@@ -272,9 +279,12 @@ ORDER BY tm.payroll_year, round((tm.avg_wage_per_branch - tm2.avg_wage_per_branc
 tm.branch
 );
 
+SELECT * FROM v_mk vm;
+
 SELECT 
 	vm.cur_year,
-	count (*) FROM v_mk vm
+	count (*) AS No_of_branches_w_salary_decrease
+FROM v_mk vm
 GROUP BY vm.cur_year;
 
 
@@ -285,9 +295,9 @@ GROUP BY vm.cur_year;
 
 SELECT 
 	tm.payroll_year,
-	tm.avg_price_year,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS avg_slr,
-	round(round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0)/tm.avg_price_year,0) AS pocet_bochniku
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
+	tm.avg_price_year AS price_of_bread_per_kg,
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS Kgs_of_bread_we_can_buy
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Chléb konzumní kmínový'
 AND tm.payroll_year IN (2006,2018)
@@ -295,9 +305,9 @@ GROUP BY tm.payroll_year, tm.avg_price_year;
 
 SELECT 
 	tm.payroll_year,
-	tm.avg_price_year,
-	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr,
-	round(round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0)/tm.avg_price_year,0) AS pocet_krabic_mleka
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
+	tm.avg_price_year AS price_milk_per_liter,
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS Litres_of_milk_we_can_buy
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Mléko polotučné pasterované'
 AND tm.payroll_year IN (2006,2018)
@@ -314,21 +324,6 @@ FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.foodstuff IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
 AND tm.payroll_year IN (2006,2018)
 ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC, tm.branch;
-
-/*SELECT 
---	tm.branch,
-	tm.payroll_year,
---	tm.avg_wage_per_branch_year,
-	tm.food,
-	tm.avg_price_year,
-	round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0) AS avg_slr,
-	round (tm.avg_wage_per_branch_year/tm.avg_price_year,0) AS how_much
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.food IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
-AND tm.payroll_year = 2006
-GROUP BY tm.payroll_year , tm.food , tm.avg_price_year ,
-round (tm.avg_wage_per_branch_year/tm.avg_price_year,0);
--- ORDER BY round (tm.avg_wage_per_branch_year/tm.avg_price_year,0)DESC, tm.branch,tm.food,tm.payroll_year;*/
 
 
 SELECT DISTINCT 
