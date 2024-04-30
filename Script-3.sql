@@ -193,7 +193,7 @@ AND tm2.branch = tm.branch
 GROUP BY  tm.payroll_year, tm2.payroll_year;
 
 
--- 1.2 Přehled růstu mezd v jednotlivých odvětvích mezi roky 2000 a 2021
+-- 1.2 Přehled celkového růstu mezd v jednotlivých odvětvích za sledované období
 
 SELECT DISTINCT 
 	tm.branch,
@@ -418,12 +418,12 @@ SELECT
 	vm.`year`,
 	vm2.`year` AS previous,
 	vm.avg_slr_year AS salary,
-	vm2.avg_slr_year AS previous_salary,
+	vm2.avg_slr_year AS prev_salary,
 	vm.foodstuff,
 	vm.avg_price_per_year AS price,
-	vm2.avg_price_per_year AS previous_price,
-	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS salary_raise,
-	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) AS price_raise,
+	vm2.avg_price_per_year AS prev_price,
+	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS salary_raise_pct,
+	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) AS price_raise_pct,
 	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
 	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS raise_diff
 FROM v_mk2 vm
