@@ -296,13 +296,15 @@ ORDER BY count (*) DESC;
 
 
 
+
 /*
  * 2. Kolik je možné si koupit litrů mléka a kilogramů chleba za první a poslední srovnatelné období v dostupných datech cen a mezd?
  */
 
+-- Přehled, kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
 
 SELECT 
-	tm.payroll_year,
+	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
 	tm.avg_price_year AS price_of_bread_per_kg,
 	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS Kgs_of_bread_we_can_buy
@@ -311,8 +313,11 @@ WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Chléb konzumní kmínov
 AND tm.payroll_year IN (2006,2018)
 GROUP BY tm.payroll_year, tm.avg_price_year;
 
+
+-- Přehled, kolik litrů mléka si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
+
 SELECT 
-	tm.payroll_year,
+	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
 	tm.avg_price_year AS price_milk_per_liter,
 	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS Litres_of_milk_we_can_buy
@@ -320,6 +325,9 @@ FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Mléko polotučné pasterované'
 AND tm.payroll_year IN (2006,2018)
 GROUP BY tm.payroll_year, tm.avg_price_year;
+
+
+-- Detailní rozbor, kolik kg chleba a litrů mléka si můžeme koupit podle oboru, v kterém pracujeme
 
 SELECT 
 	tm.branch,
@@ -334,20 +342,7 @@ AND tm.payroll_year IN (2006,2018)
 ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC, tm.branch;
 
 
-SELECT DISTINCT 
-	tm.branch,
-	tm.payroll_year,
-	tm.avg_wage_per_branch,
-	tm.foodstuff,
-	tm.avg_price_year,
-	max (round (tm.avg_wage_per_branch/tm.avg_price_year,0)) AS how_much
---	min (round (tm.avg_wage_per_branch_year/tm.avg_price_year,0)) AS how_much
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.foodstuff = 'Chléb konzumní kmínový'
-AND tm.payroll_year = 2006
-GROUP BY tm.branch,tm.payroll_year,tm.avg_wage_per_branch,tm.foodstuff,tm.avg_price_year
-ORDER BY round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC, tm.branch,tm.foodstuff,tm.payroll_year
-LIMIT 1;
+
 
 
 /*
