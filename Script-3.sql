@@ -272,7 +272,7 @@ FROM v_mk vm
 GROUP BY vm.cur_year;
 
 
--- 1.7 Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období a četnost poklesů mezd
+-- 1.7 Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období, a četnost poklesů mezd
 
 SELECT 
 	vm.branch,
@@ -337,6 +337,7 @@ ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_pri
  * 3. Která kategorie potravin zdražuje nejpomaleji (je u ní nejnižší percentuální meziroční nárůst)?
 */
 
+-- pozn. Jakostní víno je z výběru odebráno pro příliš malý vzorek
 
 -- 3.1 Potravina, která za pozorované období měla nejnižší jednoletý meziroční nárůst ceny
 
@@ -385,6 +386,44 @@ FROM t_marian_koutny_project_sql_primary_final tm
 -- WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year;
 
+SELECT 
+	tm.payroll_year AS `year`,
+	tm.foodstuff,
+	round(sum(tm.avg_price_year)/count(tm.avg_price_year),2) AS avg_price_per_year
+FROM t_marian_koutny_project_sql_primary_final tm
+WHERE tm.avg_price_year IS NOT NULL
+GROUP BY tm.payroll_year, tm.foodstuff;
+
+CREATE OR REPLACE VIEW v_mk2 AS (
+SELECT 
+	tm.payroll_year AS `year`,
+	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year,
+	tm.foodstuff,
+	round(sum(tm.avg_price_year)/count(tm.avg_price_year),2) AS avg_price_per_year
+FROM t_marian_koutny_project_sql_primary_final tm
+WHERE tm.avg_price_year IS NOT NULL
+GROUP BY tm.payroll_year, tm.foodstuff
+);
+
+SELECT 
+	vm.`year`,
+	vm2.`year` AS previous,
+	vm.avg_slr_year AS salary,
+	vm2.avg_slr_year AS previous_salary,
+	vm.foodstuff,
+	vm.avg_price_per_year AS price,
+	vm2.avg_price_per_year AS previous_price,
+	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS salary_raise,
+	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) AS price_raise,
+	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
+	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS raise_diff
+FROM v_mk2 vm
+JOIN v_mk2 vm2 ON vm.`year`-1 = vm2.`year`
+AND vm2.foodstuff = vm.foodstuff
+WHERE round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
+	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) > 10
+ORDER BY round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
+	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) DESC;
 
 SELECT 
 	tm.branch,
