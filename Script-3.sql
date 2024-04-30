@@ -3,7 +3,7 @@
  */
 
 /*
-1. Výpis tabulek potřebných k projektu:
+1. Výpis datových setů potřebných k projektu:
  */
 SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;
@@ -65,10 +65,10 @@ SELECT * FROM t_mk_price tmp;
 
 
 /*
-2c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - pomocná tabulka t_mk_extra:
+2c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - pomocná tabulka t_mk_price_general:
  */
 
-CREATE OR REPLACE TABLE t_mk_extra AS (
+CREATE OR REPLACE TABLE t_mk_price_general AS (
 SELECT 
 	tmp.food AS foodstuff,
 	tmp.rok AS rok,round(sum(tmp.avg_price)/count(tmp.rok),2) AS avg_price_year
@@ -80,7 +80,7 @@ ORDER BY tmp.rok, tmp.food
  
 
 SELECT * FROM t_mk_wage tmw;
-SELECT * FROM t_mk_extra tme;
+SELECT * FROM t_mk_price_general tmg;
 
 
 /*
@@ -92,10 +92,10 @@ SELECT
 	tmw.branch,
 	tmw.payroll_year,
 	tmw.avg_wage_per_branch,
-	tme.foodstuff,
-	tme.avg_price_year
+	tmg.foodstuff,
+	tmg.avg_price_year
 FROM t_mk_wage tmw
-LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
+LEFT JOIN t_mk_price_general tmg ON tmw.payroll_year = tmg.rok
 );
 
 /*
@@ -106,9 +106,6 @@ ALTER TABLE t_marian_koutny_project_sql_primary_final
 MODIFY COLUMN branch varchar(70);
 
 CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final(branch);
-
-SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
-
 
 
 /*
@@ -154,13 +151,11 @@ JOIN t_ec te2
     AND te.year <= 2019
 WHERE te.continent = 'Europe');
 
-SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
-
 
 /*
 5a) DROP již nepotřebných pomocných tabulek
  */
-DROP TABLE t_mk_extra;
+DROP TABLE t_mk_price_general;
 DROP TABLE t_mk_price;
 DROP TABLE t_mk_wage;
 DROP TABLE t_ec;
@@ -173,27 +168,17 @@ SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
 
 
-
-/*
- * Prumerne platy v jednotlivych letech (nerozliseno na odvetvi)
- */
-SELECT 
-	round(avg(tm.avg_wage_per_branch),0) AS avg_salary,
-	tm.payroll_year 
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL 
-GROUP BY  tm.payroll_year;
-
-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------
 /*
 VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
  */
 
 /*
- * 1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
+ 1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
  */
 
--- Rust prumerneho platu v danych letech (nezohledneno odvetvi)
+-- Vývoj průměrného platu mezi roky 2000 a 2021
+
 SELECT 
 	tm.payroll_year AS prev_year,
 	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_prev_year,
@@ -204,19 +189,16 @@ FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON
 tm2.payroll_year -1 = tm.payroll_year
 AND tm2.branch = tm.branch
-WHERE tm.avg_price_year IS NOT NULL 
 GROUP BY  tm.payroll_year, tm2.payroll_year;
 
 
-/*
- * a) Celkový růst mezd v jednotlivých odvětvích mezi roky 2000 a 2021
- */
+-- Přehled růstu mezd v jednotlivých odvětvích mezi roky 2000 a 2021
 
 SELECT DISTINCT 
 	tm.branch,
 	tm.avg_wage_per_branch AS salary_2021,
 	tm2.avg_wage_per_branch AS salary_2000,
-	round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as tota_salary_growth_pct
+	round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as total_salary_growth_pct
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -21 = tm2.payroll_year
 AND tm.branch = tm2.branch
@@ -224,25 +206,21 @@ ORDER BY round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_w
 tm.branch, tm.payroll_year;
 
 
-/*
- * b) Růst/pokles mezd v odvětvích po jednoletých letech (2000 až 2021)
- */
+-- Detailní vývoj mezd v jednotlivých odvětvích v letech 2000 až 2021
 
-SELECT DISTINCT 
+/*SELECT
 	tm.branch,
 	tm.payroll_year,
---	tm.avg_wage_per_branch_year AS salary_2021,
---	tm2.avg_wage_per_branch_year AS salary_2000,
 	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_salary_all,
-	round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as total_salary_growth_percentage
+	round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as total_salary_growth_percentage
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -1 = tm2.payroll_year
 AND tm.branch = tm2.branch
 GROUP BY tm.payroll_year,tm.branch,round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2)
 ORDER BY tm.branch,tm.payroll_year,
-round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch) / tm2.avg_wage_per_branch * 100, 2 ) DESC;
+round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch * 100,2) DESC;*/
 
-SELECT DISTINCT 
+SELECT DISTINCT
 	tm.branch,
 	tm.payroll_year AS cur_year,
 	tm.avg_wage_per_branch AS salary_cur_year,
@@ -250,9 +228,9 @@ SELECT DISTINCT
 	tm2.avg_wage_per_branch AS salary_prev_year,
 	round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) as salary_raise_pct,
 	CASE 
-		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) > 0 THEN 'Mzda roste'
-		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) = 0 THEN 'Mzda stagnuje'
-		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) < 0 THEN 'Mzda klesá'
+		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) > 0 THEN 'Increase'
+		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) = 0 THEN 'No change'
+		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) < 0 THEN 'Decrease'
 	END AS Increase_Decrease_of_salary
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -1 = tm2.payroll_year
@@ -260,9 +238,8 @@ AND tm.branch = tm2.branch
 ORDER BY tm.branch, tm.payroll_year;
 
 
-/*
- * c) Odvětví a roky, v kterých mzdy klesají
- */
+
+-- Odvětví a roky, v kterých mzdy klesají (vytvoření náhledu)
 
 CREATE OR REPLACE VIEW v_mk AS (
 SELECT DISTINCT
@@ -271,11 +248,11 @@ SELECT DISTINCT
 	tm.avg_wage_per_branch AS salary_cur_year,
 	tm2.payroll_year AS prev_year,
 	tm2.avg_wage_per_branch AS salary_prev_year,
-	round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) as salary_growth,
+	round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) as salary_decrease_pct,
 	CASE 
-		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) > 0 THEN 'Mzda roste'
-		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) = 0 THEN 'Mzda stagnuje'
-		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) < 0 THEN 'Mzda klesá'
+		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) > 0 THEN 'Increase'
+		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) = 0 THEN 'No change'
+		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) < 0 THEN 'Decrease'
 	END AS salary_decrease
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 
@@ -286,18 +263,28 @@ ORDER BY tm.payroll_year, round((tm.avg_wage_per_branch - tm2.avg_wage_per_branc
 tm.branch
 );
 
+
+-- Přehled jednotlivých poklesů mezd v daných odvětvích ve sledovaném období
+
 SELECT 
 	vm.branch,
 	vm.cur_year,
-	vm.salary_growth AS salary_decrease_pct
+	vm.salary_decrease_pct,
+	vm.salary_decrease
 FROM v_mk vm
-ORDER BY vm.branch, vm.cur_year;
+ORDER BY vm.salary_decrease_pct, vm.branch, vm.cur_year;
+
+
+-- Počet odvětví, ve kterých klesaly průměrné mzdy v daných letech
 
 SELECT 
-	vm.cur_year,
+	vm.cur_year AS `year`,
 	count (*) AS No_of_branches_w_salary_decrease
 FROM v_mk vm
 GROUP BY vm.cur_year;
+
+
+-- Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období (a počet poklesů průměrných mezd)
 
 SELECT 
 	vm.branch,
@@ -305,6 +292,8 @@ SELECT
 FROM v_mk vm
 GROUP BY vm.branch
 ORDER BY count (*) DESC;
+
+
 
 
 /*
