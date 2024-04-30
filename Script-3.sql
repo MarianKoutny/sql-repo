@@ -272,7 +272,7 @@ FROM v_mk vm
 GROUP BY vm.cur_year;
 
 
--- 1.7 Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období (a počet poklesů průměrných mezd)
+-- 1.7 Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období a četnost poklesů mezd
 
 SELECT 
 	vm.branch,
