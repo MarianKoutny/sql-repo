@@ -1,5 +1,5 @@
 /*
- * SQL PROJECT ENGETO MARIAN KOUTNÝ
+ * SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
  */
 
 
@@ -31,14 +31,14 @@ SELECT * FROM economies e;
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
 SELECT 
-	cpib.name AS branch, 
-	round(sum (value)/count (payroll_year),0) AS avg_wage_per_branch_year,
-	cp.payroll_year
+	cpib.name AS branch,
+	cp.payroll_year,
+	round(sum (value)/count (payroll_year),0) AS avg_wage_per_branch
 FROM czechia_payroll cp
 JOIN czechia_payroll_industry_branch cpib
 ON cp.industry_branch_code = cpib.code
 WHERE value_type_code = 5958 AND industry_branch_code IS NOT NULL
-GROUP BY industry_branch_code, payroll_year
+GROUP BY cpib.name, cp.payroll_year
 );
 
 SELECT * FROM t_mk_wage tmw;
@@ -50,10 +50,10 @@ SELECT * FROM t_mk_wage tmw;
 
 CREATE OR REPLACE TABLE t_mk_price AS (
 SELECT 
-	sum(cp.value)/count(YEAR(cp.date_from)) AS avg_price,
 	cpc.name AS food,
 	year(cp.date_from) AS rok,
-	cr.name AS region
+	cr.name AS region,
+	sum(cp.value)/count(YEAR(cp.date_from)) AS avg_price
 FROM czechia_price cp
 JOIN czechia_price_category cpc
 	ON cp.category_code = cpc.code
@@ -73,13 +73,12 @@ SELECT * FROM t_mk_price tmp;
 
 CREATE OR REPLACE TABLE t_mk_extra AS (
 SELECT 
-	round(sum(tmp.avg_price)/count(tmp.rok),2) AS avg_price_year,
-	tmp.food AS food,
-	tmp.rok AS rok
+	tmp.food AS foodstuff,
+	tmp.rok AS rok,round(sum(tmp.avg_price)/count(tmp.rok),2) AS avg_price_year
 FROM t_mk_price tmp
 WHERE tmp.region IS NOT NULL
 GROUP BY tmp.food, tmp.rok
-ORDER BY rok, food
+ORDER BY tmp.rok, tmp.food
 );
  
 
@@ -95,8 +94,8 @@ CREATE OR REPLACE TABLE t_Marian_Koutny_project_SQL_primary_final AS (
 SELECT
 	tmw.branch,
 	tmw.payroll_year,
-	tmw.avg_wage_per_branch_year,
-	tme.food,
+	tmw.avg_wage_per_branch,
+	tme.foodstuff,
 	tme.avg_price_year
 FROM t_mk_wage tmw
 LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
@@ -110,36 +109,12 @@ CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final
 
 
 SELECT * FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.food IS NOT NULL
-ORDER BY tm.payroll_year, tm.branch;
+WHERE tm.foodstuff IS NOT NULL
+ORDER BY tm.payroll_year, tm.branch, tm.foodstuff;
 
 /*
  * Rust mezd v jednotlivych sektorech mezi lety 2000 a 2021
  */
-/*SELECT DISTINCT
-	tm.branch,
-	tm.payroll_year AS current_year,
-	tm.avg_wage_per_branch_year AS salary_current_year,
-	tm2.payroll_year AS previous_year,
-	tm2.avg_wage_per_branch_year AS salary_previous_year,
-	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth_pct
-FROM t_marian_koutny_project_sql_primary_final tm
-JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -1 = tm2.payroll_year
-AND tm.branch = tm2.branch
-ORDER BY tm.branch, tm.payroll_year;
-
-
-SELECT 
-	-- tm.branch,
-	tm.payroll_year,
-	-- tm.avg_wage_per_branch_year,
-	tm.food,
-	tm.avg_price_year,
-	round(tm.avg_wage_per_branch_year/tm.avg_price_year,0) AS how_much_I_can_buy,
-	round(sum(tm.avg_wage_per_branch_year)/count(tm.avg_wage_per_branch_year),0) AS avg_salary_all
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.food = 'Chléb konzumní kmínový' AND tm.payroll_year IN (2006)
-ORDER BY tm.branch, tm.payroll_year, tm.food;*/
 
 
 CREATE OR REPLACE TABLE t_ec AS (
@@ -155,7 +130,6 @@ JOIN countries c ON e.country = c.country
 WHERE c.government_type NOT LIKE '%Territory%' and c.government_type NOT LIKE '%of%'
 and c.government_type NOT LIKE '%administrated%'and c.government_type NOT LIKE '%occupied%'
 AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 2000 AND 2021
-GROUP BY e.`year`, e.GDP
 ORDER BY e.country ASC, e.`year` DESC 
 );
 
@@ -168,7 +142,7 @@ SELECT
 	te.YEAR AS cur_year, 
 	te2.YEAR as year_prev,
 	round( ( te.GDP - te2.GDP ) / te2.GDP * 100, 2 ) as GDP_growth,
-	te.population,
+	te.population AS population_cur_y,
 	te.gini
 FROM t_ec te 
 JOIN t_ec te2 
@@ -185,39 +159,18 @@ DROP TABLE t_mk_wage;
 DROP TABLE t_ec;
 
 
-SELECT * FROM t_marian_koutny_project_sql_secondary_final ts; 
-SELECT DISTINCT payroll_year, branch,avg_wage_per_branch_year  FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.branch = 'Administrativní a podpůrné činnosti'
-ORDER BY payroll_year ;
-
-SELECT * FROM t_marian_koutny_project_sql_secondary_final ts
-WHERE country = "Czech republic" AND ts.cur_year BETWEEN 2001 AND 2020;
-
-
 /*
  * Prumerne platy v jednotlivych letech (nerozliseno na odvetvi)
  */
 SELECT 
-	round(avg(tm.avg_wage_per_branch_year),0) AS avg_salary,
+	round(avg(tm.avg_wage_per_branch),0) AS avg_salary,
 --	tm.branch
 	tm.payroll_year 
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL 
 GROUP BY  tm.payroll_year;
--- ORDER BY tm.payroll_year DESC ;
+-- ORDER BY tm.payroll_year DESC;
 
-
-/*SELECT
-	tm.avg_wage_per_branch_year
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.payroll_year = 2000 ;
-
-SELECT DISTINCT 
-	tm.payroll_year ,
-	avg(tm.avg_wage_per_branch_year ) AS prumer
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.payroll_year IN (2000,2001,2002,2003)
-GROUP BY tm.payroll_year  ;*/
 
 
 /*
@@ -227,17 +180,17 @@ GROUP BY tm.payroll_year  ;*/
 -- Rust prumerneho platu v danych letech (nezohledneno odvetvi)
 SELECT 
 	tm.payroll_year,
-	round(avg(tm.avg_wage_per_branch_year),0) AS avg_salary,
+	round(avg(tm.avg_wage_per_branch),0) AS avg_salary,
 	tm2.payroll_year AS salary_end,
-	round(avg(tm2.avg_wage_per_branch_year),0) AS avg_salary,
-	round(((avg(tm2.avg_wage_per_branch_year) - avg(tm.avg_wage_per_branch_year))/avg(tm.avg_wage_per_branch_year))*100,2) AS salary_raise
+	round(avg(tm2.avg_wage_per_branch),0) AS avg_salary,
+	round(((avg(tm2.avg_wage_per_branch) - avg(tm.avg_wage_per_branch))/avg(tm.avg_wage_per_branch))*100,2) AS salary_raise
 --	tm.branch
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON
 tm2.payroll_year -1 = tm.payroll_year
 AND tm2.branch = tm.branch
 WHERE tm.avg_price_year IS NOT NULL 
-GROUP BY  tm.payroll_year;
+GROUP BY  tm.payroll_year, tm2.payroll_year;
 
 
 /*
@@ -246,13 +199,13 @@ GROUP BY  tm.payroll_year;
 
 SELECT DISTINCT 
 	tm.branch,
-	tm.avg_wage_per_branch_year AS salary_2021,
-	tm2.avg_wage_per_branch_year AS salary_2000,
-	round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) as tota_salary_growth_percentage
+	tm.avg_wage_per_branch AS salary_2021,
+	tm2.avg_wage_per_branch AS salary_2000,
+	round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as tota_salary_growth_pct
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -21 = tm2.payroll_year
 AND tm.branch = tm2.branch
-ORDER BY round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC, 
+ORDER BY round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) DESC, 
 tm.branch, tm.payroll_year;
 
 
@@ -261,15 +214,14 @@ SELECT DISTINCT
 	tm.payroll_year,
 --	tm.avg_wage_per_branch_year AS salary_2021,
 --	tm2.avg_wage_per_branch_year AS salary_2000,
-	round(sum(tm.avg_wage_per_branch_year)/count(tm.avg_wage_per_branch_year),0) AS avg_salary_all,
-	round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2) as tota_salary_growth_percentage
+	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_salary_all,
+	round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as total_salary_growth_percentage
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -1 = tm2.payroll_year
 AND tm.branch = tm2.branch
-GROUP BY tm.payroll_year,tm.branch,-- tm.avg_wage_per_branch_year,tm2.avg_wage_per_branch_year,--
-round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2)
+GROUP BY tm.payroll_year,tm.branch,round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2)
 ORDER BY tm.branch,tm.payroll_year,
-round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC;
+round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch) / tm2.avg_wage_per_branch * 100, 2 ) DESC;
 
 
 /*
@@ -279,14 +231,14 @@ round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_
 SELECT DISTINCT 
 	tm.branch,
 	tm.payroll_year AS cur_year,
-	tm.avg_wage_per_branch_year AS salary_cur_year,
+	tm.avg_wage_per_branch AS salary_cur_year,
 	tm2.payroll_year AS prev_year,
-	tm2.avg_wage_per_branch_year AS salary_prev_year,
-	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_raise_pct,
+	tm2.avg_wage_per_branch AS salary_prev_year,
+	round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) as salary_raise_pct,
 	CASE 
-		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) > 0 THEN 'Mzda roste'
-		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) = 0 THEN 'Mzda stagnuje'
-		WHEN round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) < 0 THEN 'Mzda klesá'
+		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) > 0 THEN 'Mzda roste'
+		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) = 0 THEN 'Mzda stagnuje'
+		WHEN round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) < 0 THEN 'Mzda klesá'
 	END AS Increase_Decrease_of_salary
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -1 = tm2.payroll_year
@@ -298,27 +250,32 @@ ORDER BY tm.branch, tm.payroll_year;
  * c) Odvětví a roky, v kterých mzdy klesají
  */
 
+CREATE VIEW v_mk AS (
 SELECT DISTINCT
 	tm.branch,
 	tm.payroll_year AS cur_year,
-	tm.avg_wage_per_branch_year AS salary_cur_year,
+	tm.avg_wage_per_branch AS salary_cur_year,
 	tm2.payroll_year AS prev_year,
-	tm2.avg_wage_per_branch_year AS salary_prev_year,
-	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) as salary_growth,
+	tm2.avg_wage_per_branch AS salary_prev_year,
+	round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) as salary_growth,
 	CASE 
-		WHEN round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) > 0 THEN 'Mzda roste'
-		WHEN round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) = 0 THEN 'Mzda stagnuje'
-		WHEN round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) < 0 THEN 'Mzda klesá'
-	END AS Increase_Decrease_of_salary
+		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) > 0 THEN 'Mzda roste'
+		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) = 0 THEN 'Mzda stagnuje'
+		WHEN round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) < 0 THEN 'Mzda klesá'
+	END AS salary_decrease
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 
 ON tm.branch = tm2.branch
     AND tm.payroll_year -1 = tm2.payroll_year
-WHERE round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 )<0
-ORDER BY round((tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) ASC, 
-tm.branch, tm.payroll_year;
+WHERE round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 )<0
+ORDER BY tm.payroll_year, round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) ASC, 
+tm.branch
+);
 
-
+SELECT 
+	vm.cur_year,
+	count (*) FROM v_mk vm
+GROUP BY vm.cur_year;
 
 
 /*
@@ -329,34 +286,34 @@ tm.branch, tm.payroll_year;
 SELECT 
 	tm.payroll_year,
 	tm.avg_price_year,
-	round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0) AS avg_slr,
-	round(round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0)/tm.avg_price_year,0) AS pocet_bochniku
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS avg_slr,
+	round(round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0)/tm.avg_price_year,0) AS pocet_bochniku
 FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL AND tm.food = 'Chléb konzumní kmínový'
+WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Chléb konzumní kmínový'
 AND tm.payroll_year IN (2006,2018)
-GROUP BY tm.payroll_year, tm.avg_price_year ;
+GROUP BY tm.payroll_year, tm.avg_price_year;
 
 SELECT 
 	tm.payroll_year,
 	tm.avg_price_year,
-	round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0) AS avg_slr,
-	round(round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0)/tm.avg_price_year,0) AS pocet_krabic_mleka
+	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr,
+	round(round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0)/tm.avg_price_year,0) AS pocet_krabic_mleka
 FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL AND tm.food = 'Mléko polotučné pasterované'
+WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Mléko polotučné pasterované'
 AND tm.payroll_year IN (2006,2018)
 GROUP BY tm.payroll_year, tm.avg_price_year;
 
 SELECT 
 	tm.branch,
 	tm.payroll_year,
-	tm.avg_wage_per_branch_year,
-	tm.food,
+	tm.avg_wage_per_branch,
+	tm.foodstuff,
 	tm.avg_price_year,
-	round (tm.avg_wage_per_branch_year/tm.avg_price_year,0) AS how_much
+	round (tm.avg_wage_per_branch/tm.avg_price_year,0) AS how_much
 FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.food IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
+WHERE tm.foodstuff IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
 AND tm.payroll_year IN (2006,2018)
-ORDER BY tm.payroll_year ,tm.food, round (tm.avg_wage_per_branch_year/tm.avg_price_year,0)DESC, tm.branch ;
+ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC, tm.branch;
 
 /*SELECT 
 --	tm.branch,
@@ -377,16 +334,16 @@ round (tm.avg_wage_per_branch_year/tm.avg_price_year,0);
 SELECT DISTINCT 
 	tm.branch,
 	tm.payroll_year,
-	tm.avg_wage_per_branch_year,
-	tm.food,
+	tm.avg_wage_per_branch,
+	tm.foodstuff,
 	tm.avg_price_year,
-	max (round (tm.avg_wage_per_branch_year/tm.avg_price_year,0)) AS how_much
+	max (round (tm.avg_wage_per_branch/tm.avg_price_year,0)) AS how_much
 --	min (round (tm.avg_wage_per_branch_year/tm.avg_price_year,0)) AS how_much
 FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.food = 'Chléb konzumní kmínový'
+WHERE tm.foodstuff = 'Chléb konzumní kmínový'
 AND tm.payroll_year = 2006
-GROUP BY tm.branch,tm.payroll_year,tm.avg_wage_per_branch_year,tm.food,tm.avg_price_year
-ORDER BY round (tm.avg_wage_per_branch_year/tm.avg_price_year,0)DESC, tm.branch,tm.food,tm.payroll_year
+GROUP BY tm.branch,tm.payroll_year,tm.avg_wage_per_branch,tm.foodstuff,tm.avg_price_year
+ORDER BY round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC, tm.branch,tm.foodstuff,tm.payroll_year
 LIMIT 1;
 
 
@@ -398,28 +355,28 @@ LIMIT 1;
 SELECT DISTINCT 
  	tm2.payroll_year AS start_year,
  	tm.payroll_year AS end_year,
-	tm.food AS item,
+	tm.foodstuff AS item,
 	tm2.avg_price_year AS price_start_year,
 	tm.avg_price_year AS price_end_year,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase_pct
 FROM t_marian_koutny_project_sql_primary_final tm
-JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.food = tm2.food
+JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
 AND tm.payroll_year -1 = tm2.payroll_year
 WHERE tm.avg_price_year IS NOT NULL
-ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC,tm.food, tm.payroll_year
+ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC,tm.foodstuff, tm.payroll_year
 LIMIT 1;
 
 
 SELECT DISTINCT
-	tm.food AS item,
+	tm.foodstuff AS item,
 	tm2.avg_price_year AS price_2006,
 	tm.avg_price_year AS price_2018,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
 FROM t_marian_koutny_project_sql_primary_final tm
-JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.food = tm2.food
+JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
 AND tm.payroll_year -12 = tm2.payroll_year
 WHERE tm.avg_price_year IS NOT NULL
-ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.food;
+ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.foodstuff;
 
 
 
@@ -431,7 +388,7 @@ ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year 
 -- Prumerny plat v danem roce ve vsech odvetvich dohromady
 SELECT 
 	tm.payroll_year,
-	round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0) AS avg_slr_year
+	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
 -- WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year;
@@ -440,17 +397,17 @@ GROUP BY tm.payroll_year;
 SELECT 
 	tm.branch,
 	tm.payroll_year,
-	tm.food,
+	tm.foodstuff,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) AS price_raise,
-	tm.avg_wage_per_branch_year,
-	round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS salary_raise,
-	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
+	tm.avg_wage_per_branch,
+	round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch) / tm2.avg_wage_per_branch * 100, 2 ) AS salary_raise,
+	round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2) - round((tm.avg_wage_per_branch- tm2.avg_wage_per_branch) / tm2.avg_wage_per_branch * 100, 2 ) AS diff
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.branch = tm2.branch
-	AND tm.food = tm2.food
+	AND tm.foodstuff = tm2.foodstuff
     AND tm.payroll_year -1 = tm2.payroll_year
-WHERE round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2)-round((tm.avg_wage_per_branch_year-tm2.avg_wage_per_branch_year)/tm2.avg_wage_per_branch_year*100,2)>10
-ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) DESC,
+WHERE round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2)-round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2)>10
+ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch * 100,2) DESC,
 tm.payroll_year;
 
 
@@ -464,7 +421,7 @@ SELECT * FROM countries c WHERE continent = 'Europe' AND government_type NOT LIK
 AND government_type NOT LIKE '%Independent%' AND  government_type NOT LIKE '%part%' AND country = 'Liechtenstein';
 
 SELECT * FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.food = 'Papriky';
+WHERE tm.foodstuff = 'Papriky';
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
 WHERE ts.cur_year = 1999;
 SELECT
@@ -474,19 +431,19 @@ FROM t_marian_koutny_project_sql_secondary_final ts;
 SELECT
 	tm.branch,
 	tm.payroll_year AS `year`,
-	tm.avg_wage_per_branch_year AS salary,
-	tm.food AS item,
+	tm.avg_wage_per_branch AS salary,
+	tm.foodstuff,
 	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS pr_up,
 	ts.GDP_growth AS GDPup,
 	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth AS pr_GDP_d,
-	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS wage_up,
-	round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2) - ts.GDP_growth AS w_GDP_d
+	round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) AS wage_up,
+	round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2) - ts.GDP_growth AS w_GDP_d
 --	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.branch = tm2.branch
-	AND tm.food = tm2.food
+	AND tm.foodstuff = tm2.foodstuff
     AND tm.payroll_year -1 = tm2.payroll_year
 JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year = ts.cur_year
 WHERE ts.country = 'Czech republic'
 ORDER BY round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth DESC,
-round(( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2) - ts.GDP_growth DESC;
+round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2) - ts.GDP_growth DESC;
