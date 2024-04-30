@@ -378,13 +378,17 @@ ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year 
 */
 
 
--- Prumerny plat v danem roce ve vsech odvetvich dohromady
+-- 4.1 Prumerny plat v danem roce ve vsech odvetvich dohromady
+
 SELECT 
 	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
 -- WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year;
+
+
+-- 4.2 Průmerná cena jednotlivých potravin v daných letech
 
 SELECT 
 	tm.payroll_year AS `year`,
@@ -393,6 +397,9 @@ SELECT
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year, tm.foodstuff;
+
+
+-- 4.3 Vytvoření pohledu, na němž se bude porovnávat rozdíl nárůstu cen a mezd
 
 CREATE OR REPLACE VIEW v_mk2 AS (
 SELECT 
@@ -404,6 +411,9 @@ FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year, tm.foodstuff
 );
+
+
+-- 4.4 Rozdíl mezi růstem cen potravin a růstem mezd ve sledovaném období
 
 SELECT 
 	vm.`year`,
@@ -425,6 +435,9 @@ WHERE round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_y
 ORDER BY round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
 	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) DESC;
 
+
+-- 4.5 Rozdíl mezi růstem cen a mezd v daném období vztaženo na detail v jednotlivých odvětvích
+
 SELECT 
 	tm.branch,
 	tm.payroll_year,
@@ -440,6 +453,8 @@ JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.branch = tm2.branch
 WHERE round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2)-round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2)>10
 ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) - round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch * 100,2) DESC,
 tm.payroll_year;
+
+
 
 
 
