@@ -19,74 +19,14 @@ SELECT * FROM czechia_payroll_value_type cpvt;
 SELECT * FROM countries c;
 SELECT * FROM economies e;
 
-/*
-2. Seznámení se s tabulkami, spočtění průměrných mezd, cen atd.
- */
-
-
-/* 
-2a) Průměrná mzda v jednotlivých oborech za dané roky. (kód 200)
- */
-
-SELECT 
-	round (sum (cp.value)/count(cp.payroll_year),0) AS average_salary,
-	cp.payroll_year,
-	cpib.name AS industry_branch
-FROM czechia_payroll cp
-JOIN czechia_payroll_industry_branch cpib
-	ON cp.industry_branch_code = cpib.code
-JOIN czechia_payroll_calculation cpc
-	ON cp.calculation_code = cpc.code
-JOIN czechia_payroll_unit cpu
-	ON cp.unit_code = cpu.code
-JOIN czechia_payroll_value_type cpvt
-	ON cp.value_type_code = cpvt.code
-WHERE cpvt.code = 5958 AND cpib.name IS NOT NULL AND cpc.code = 200
-GROUP BY cpib.code , cp.payroll_year;
-
-
-/*
-2b) Průměrné ceny potravin v daných letech a krajích
- */
-
-SELECT 
-	YEAR(cp.date_from) AS 'year',
-	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price,
-	cpc.name AS food,
-	cr.name AS region
-FROM czechia_price cp
-JOIN czechia_price_category cpc
-	ON cp.category_code = cpc.code
-JOIN czechia_region cr
-	ON cp.region_code = cr.code
-GROUP BY YEAR(cp.date_from), cpc.name, cr.name
-ORDER BY YEAR(cp.date_from), cpc.name, cr.name ASC;
-
-
-/*
-2c) Průměrná cena jednotlivých potravin v daných letech (nerozděleno na kraje)
- */
-
-SELECT 
-	YEAR(cp.date_from) AS 'year',
-	round(sum(cp.value)/count(YEAR(cp.date_from)),3) AS avg_price,
-	cpc.name AS food
-FROM czechia_price cp
-JOIN czechia_price_category cpc
-	ON cp.category_code = cpc.code
-WHERE cp.value IS NOT NULL
-GROUP BY cpc.name, YEAR(cp.date_from)
-ORDER BY cpc.name;
-
-
 -------------------------------------------------------------------------------------------------------------------
 /*
-3. Vytvoření pomocných tabulek, pomoci kterých se dostanu k finálním tabulkám:
+2. Vytvoření pomocných tabulek, pomoci kterých se dostanu k finálním tabulkám:
  */
 
 
 /*
-3a) Vývoj průměrných platů v jednotlivých odvětvích - pomocná tabulka t_mk_wage:
+2a) Vývoj průměrných platů v jednotlivých odvětvích - pomocná tabulka t_mk_wage:
  */
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
@@ -105,7 +45,7 @@ SELECT * FROM t_mk_wage tmw;
 
 
 /*
-3b) Vývoj cen jednotlivých potravin v daných letech a krajích - tabulka t_mk_price:
+2b) Vývoj cen jednotlivých potravin v daných letech a krajích - tabulka t_mk_price:
  */
 
 CREATE OR REPLACE TABLE t_mk_price AS (
@@ -128,7 +68,7 @@ SELECT * FROM t_mk_price tmp;
 
 
 /*
-3c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - tabulka t_mk_extra:
+2c) Vývoj ceny potravin v jednotlivých letech (průmerováno za všechny kraje) - tabulka t_mk_extra:
  */
 
 CREATE OR REPLACE TABLE t_mk_extra AS (
@@ -162,11 +102,6 @@ FROM t_mk_wage tmw
 LEFT JOIN t_mk_extra tme ON tmw.payroll_year = tme.rok
 );
 
-DROP TABLE t_mkf;
-
-SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
-ORDER BY tm.payroll_year, tm.branch;
-
 
 ALTER TABLE t_marian_koutny_project_sql_primary_final 
 MODIFY COLUMN branch varchar(70);
@@ -174,10 +109,14 @@ MODIFY COLUMN branch varchar(70);
 CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final(branch);
 
 
+SELECT * FROM t_marian_koutny_project_sql_primary_final tm
+WHERE tm.food IS NOT NULL
+ORDER BY tm.payroll_year, tm.branch;
+
 /*
  * Rust mezd v jednotlivych sektorech mezi lety 2000 a 2021
  */
-SELECT DISTINCT 
+/*SELECT DISTINCT
 	tm.branch,
 	tm.payroll_year AS current_year,
 	tm.avg_wage_per_branch_year AS salary_current_year,
@@ -200,7 +139,7 @@ SELECT
 	round(sum(tm.avg_wage_per_branch_year)/count(tm.avg_wage_per_branch_year),0) AS avg_salary_all
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.food = 'Chléb konzumní kmínový' AND tm.payroll_year IN (2006)
-ORDER BY tm.branch, tm.payroll_year, tm.food;
+ORDER BY tm.branch, tm.payroll_year, tm.food;*/
 
 
 CREATE OR REPLACE TABLE t_ec AS (
@@ -215,7 +154,7 @@ FROM economies e
 JOIN countries c ON e.country = c.country 
 WHERE c.government_type NOT LIKE '%Territory%' and c.government_type NOT LIKE '%of%'
 and c.government_type NOT LIKE '%administrated%'and c.government_type NOT LIKE '%occupied%'
-AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 1999 AND 2019
+AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 2000 AND 2021
 GROUP BY e.`year`, e.GDP
 ORDER BY e.country ASC, e.`year` DESC 
 );
@@ -238,6 +177,8 @@ JOIN t_ec te2
     AND te.year <= 2019
 WHERE te.continent = 'Europe');
 
+SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
+
 DROP TABLE t_mk_extra;
 DROP TABLE t_mk_price;
 DROP TABLE t_mk_wage;
@@ -252,13 +193,17 @@ ORDER BY payroll_year ;
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts
 WHERE country = "Czech republic" AND ts.cur_year BETWEEN 2001 AND 2020;
 
+
+/*
+ * Prumerne platy v jednotlivych letech (nerozliseno na odvetvi)
+ */
 SELECT 
 	round(avg(tm.avg_wage_per_branch_year),0) AS avg_salary,
 --	tm.branch
 	tm.payroll_year 
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL 
-GROUP BY  tm.payroll_year  ;
+GROUP BY  tm.payroll_year;
 -- ORDER BY tm.payroll_year DESC ;
 
 
@@ -279,6 +224,20 @@ GROUP BY tm.payroll_year  ;*/
  * 1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
  */
 
+-- Rust prumerneho platu v danych letech (nezohledneno odvetvi)
+SELECT 
+	tm.payroll_year,
+	round(avg(tm.avg_wage_per_branch_year),0) AS avg_salary,
+	tm2.payroll_year AS salary_end,
+	round(avg(tm2.avg_wage_per_branch_year),0) AS avg_salary,
+	round(((avg(tm2.avg_wage_per_branch_year) - avg(tm.avg_wage_per_branch_year))/avg(tm.avg_wage_per_branch_year))*100,2) AS salary_raise
+--	tm.branch
+FROM t_marian_koutny_project_sql_primary_final tm
+JOIN t_marian_koutny_project_sql_primary_final tm2 ON
+tm2.payroll_year -1 = tm.payroll_year
+AND tm2.branch = tm.branch
+WHERE tm.avg_price_year IS NOT NULL 
+GROUP BY  tm.payroll_year;
 
 
 /*
@@ -474,7 +433,7 @@ SELECT
 	tm.payroll_year,
 	round(sum(tm.avg_wage_per_branch_year )/count(tm.avg_wage_per_branch_year),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL
+-- WHERE tm.avg_price_year IS NOT NULL
 GROUP BY tm.payroll_year;
 
 
@@ -500,6 +459,9 @@ tm.payroll_year;
  *5. Má výška HDP vliv na změny ve mzdách a cenách potravin? Neboli, pokud HDP vzroste výrazněji v jednom roce, 
  *projeví se to na cenách potravin či mzdách ve stejném nebo násdujícím roce výraznějším růstem?
 */
+
+SELECT * FROM countries c WHERE continent = 'Europe' AND government_type NOT LIKE '%Dependent%'
+AND government_type NOT LIKE '%Independent%' AND  government_type NOT LIKE '%part%' AND country = 'Liechtenstein';
 
 SELECT * FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.food = 'Papriky';
