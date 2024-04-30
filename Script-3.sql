@@ -177,7 +177,8 @@ VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
  1. Rostou v průběhu let mzdy ve všech odvětvích, nebo v některých klesají?
  */
 
--- Vývoj průměrného platu mezi roky 2000 a 2021
+
+-- 1.1 Vývoj průměrného platu mezi roky 2000 a 2021
 
 SELECT 
 	tm.payroll_year AS prev_year,
@@ -192,7 +193,7 @@ AND tm2.branch = tm.branch
 GROUP BY  tm.payroll_year, tm2.payroll_year;
 
 
--- Přehled růstu mezd v jednotlivých odvětvích mezi roky 2000 a 2021
+-- 1.2 Přehled růstu mezd v jednotlivých odvětvích mezi roky 2000 a 2021
 
 SELECT DISTINCT 
 	tm.branch,
@@ -206,19 +207,7 @@ ORDER BY round( ( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_w
 tm.branch, tm.payroll_year;
 
 
--- Detailní vývoj mezd v jednotlivých odvětvích v letech 2000 až 2021
-
-/*SELECT
-	tm.branch,
-	tm.payroll_year,
-	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_salary_all,
-	round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2) as total_salary_growth_percentage
-FROM t_marian_koutny_project_sql_primary_final tm
-JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.payroll_year -1 = tm2.payroll_year
-AND tm.branch = tm2.branch
-GROUP BY tm.payroll_year,tm.branch,round((tm.avg_wage_per_branch-tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch*100,2)
-ORDER BY tm.branch,tm.payroll_year,
-round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch)/tm2.avg_wage_per_branch * 100,2) DESC;*/
+-- 1.3 Detailní vývoj mezd v jednotlivých odvětvích v letech 2000 až 2021
 
 SELECT DISTINCT
 	tm.branch,
@@ -238,8 +227,7 @@ AND tm.branch = tm2.branch
 ORDER BY tm.branch, tm.payroll_year;
 
 
-
--- Odvětví a roky, v kterých mzdy klesají (vytvoření náhledu)
+-- 1.4 Odvětví a roky, v kterých mzdy klesají (vytvoření náhledu)
 
 CREATE OR REPLACE VIEW v_mk AS (
 SELECT DISTINCT
@@ -264,7 +252,7 @@ tm.branch
 );
 
 
--- Přehled jednotlivých poklesů mezd v daných odvětvích ve sledovaném období
+-- 1.5 Přehled jednotlivých poklesů mezd v daných odvětvích ve sledovaném období
 
 SELECT 
 	vm.branch,
@@ -275,7 +263,7 @@ FROM v_mk vm
 ORDER BY vm.salary_decrease_pct, vm.branch, vm.cur_year;
 
 
--- Počet odvětví, ve kterých klesaly průměrné mzdy v daných letech
+-- 1.6 Počet odvětví, ve kterých klesaly průměrné mzdy v daných letech
 
 SELECT 
 	vm.cur_year AS `year`,
@@ -284,7 +272,7 @@ FROM v_mk vm
 GROUP BY vm.cur_year;
 
 
--- Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období (a počet poklesů průměrných mezd)
+-- 1.7 Přehled odvětví, která byla zasažena poklesem mezd ve sledovaném období (a počet poklesů průměrných mezd)
 
 SELECT 
 	vm.branch,
@@ -301,7 +289,7 @@ ORDER BY count (*) DESC;
  * 2. Kolik je možné si koupit litrů mléka a kilogramů chleba za první a poslední srovnatelné období v dostupných datech cen a mezd?
  */
 
--- Přehled, kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
+-- 2.1 Přehled, kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
 
 SELECT 
 	tm.payroll_year AS `year`,
@@ -314,7 +302,7 @@ AND tm.payroll_year IN (2006,2018)
 GROUP BY tm.payroll_year, tm.avg_price_year;
 
 
--- Přehled, kolik litrů mléka si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
+-- 2.2 Přehled, kolik litrů mléka si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
 
 SELECT 
 	tm.payroll_year AS `year`,
@@ -327,7 +315,7 @@ AND tm.payroll_year IN (2006,2018)
 GROUP BY tm.payroll_year, tm.avg_price_year;
 
 
--- Detailní rozbor, kolik kg chleba a litrů mléka si můžeme koupit podle oboru, v kterém pracujeme
+-- 2.3 Detailní rozbor, kolik kg chleba a litrů mléka si můžeme koupit podle oboru, v kterém pracujeme v letech 2006 a 2018
 
 SELECT 
 	tm.branch,
@@ -350,13 +338,15 @@ ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_pri
 */
 
 
-SELECT DISTINCT 
+-- 3.1 Potravina, která za pozorované období měla nejnižší jednoletý meziroční nárůst ceny
+
+SELECT DISTINCT
  	tm2.payroll_year AS start_year,
  	tm.payroll_year AS end_year,
-	tm.foodstuff AS item,
+	tm.foodstuff,
 	tm2.avg_price_year AS price_start_year,
 	tm.avg_price_year AS price_end_year,
-	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase_pct
+	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_decrease_pct
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
 AND tm.payroll_year -1 = tm2.payroll_year
@@ -364,6 +354,8 @@ WHERE tm.avg_price_year IS NOT NULL
 ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC,tm.foodstuff, tm.payroll_year
 LIMIT 1;
 
+
+-- 3.2 Přehled celkového zdražování jednotlivých potravin mezi lety 2006 a 2018
 
 SELECT DISTINCT
 	tm.foodstuff AS item,
@@ -378,6 +370,8 @@ ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year 
 
 
 
+
+
 /*
  * 4. Existuje rok, ve kterém byl meziroční nárůst cen potravin výrazně vyšší než růst mezd (větší než 10 %)?
 */
@@ -385,7 +379,7 @@ ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year 
 
 -- Prumerny plat v danem roce ve vsech odvetvich dohromady
 SELECT 
-	tm.payroll_year,
+	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
 -- WHERE tm.avg_price_year IS NOT NULL
