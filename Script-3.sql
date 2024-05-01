@@ -14,8 +14,8 @@ SELECT * FROM czechia_payroll_industry_branch cpib;
 SELECT * FROM czechia_payroll_calculation cpc; 
 SELECT * FROM czechia_payroll_unit cpu;
 SELECT * FROM czechia_payroll_value_type cpvt;
-SELECT * FROM countries c WHERE continent = 'Europe';
-SELECT * FROM economies e WHERE country = 'Montenegro';
+SELECT * FROM countries c;
+SELECT * FROM economies e;
 -------------------------------------------------------------------------------------------------------------------
 /*
 2. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
@@ -166,9 +166,7 @@ DROP TABLE t_ec;
  */
 
 SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
-WHERE tm.avg_price_year IS NULL ;
-SELECT  *
-FROM t_marian_koutny_project_sql_secondary_final ts WHERE ts.country = 'Montenegro';
+SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
 
 
 -------------------------------------------------------------------------------------------------------------------------------
