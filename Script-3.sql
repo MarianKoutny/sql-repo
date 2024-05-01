@@ -18,12 +18,12 @@ SELECT * FROM countries c;
 SELECT * FROM economies e;
 -------------------------------------------------------------------------------------------------------------------
 /*
-2. Vytvoření pomocných tabulek, pomoci kterých se dostanu k první finální tabulce
+2. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
  */
 
 
 /*
-2a) Vývoj průměrných platů v jednotlivých odvětvích - pomocná tabulka t_mk_wage
+2a) Vývoj průměrných platů v jednotlivých odvětvích mezi lety 2000 a 2021 - pomocná tabulka t_mk_wage
  */
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
@@ -42,7 +42,7 @@ SELECT * FROM t_mk_wage tmw;
 
 
 /*
-2b) Vývoj cen jednotlivých potravin v daných letech a krajích - tabulka t_mk_price
+2b) Vývoj průměrných cen jednotlivých potravin v letech 2006 až 2018 v daných krajích - tabulka t_mk_price
  */
 
 CREATE OR REPLACE TABLE t_mk_price AS (
@@ -65,7 +65,7 @@ SELECT * FROM t_mk_price tmp;
 
 
 /*
-2c) Vývoj cen potravin v jednotlivých letech (průmerováno za všechny kraje) - pomocná tabulka t_mk_price_general
+2c) Vývoj průměrných cen potravin v letech 2006 až 2018 (průměr za všechny kraje) - pomocná tabulka t_mk_price_general
  */
 
 CREATE OR REPLACE TABLE t_mk_price_general AS (
@@ -109,7 +109,7 @@ CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final
 
 
 /*
-4. Vytvoření pomocné tabulky pro sekundární tabulku projektu
+4. Vytvoření pomocné tabulky pro sekundární tabulku projektu - tabulka t_ec
  */
 
 CREATE OR REPLACE TABLE t_ec AS (
@@ -415,15 +415,15 @@ GROUP BY tm.payroll_year, tm.foodstuff
 -- 4.4 Rozdíl mezi růstem cen potravin a růstem mezd ve sledovaném období
 
 SELECT 
+	vm.foodstuff,
+	vm.avg_price_per_year AS price,
+	vm2.avg_price_per_year AS prev_price,
 	vm.`year`,
 	vm2.`year` AS previous,
 	vm.avg_slr_year AS salary,
 	vm2.avg_slr_year AS prev_salary,
-	vm.foodstuff,
-	vm.avg_price_per_year AS price,
-	vm2.avg_price_per_year AS prev_price,
-	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS salary_raise_pct,
 	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) AS price_raise_pct,
+	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS salary_raise_pct,
 	round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
 	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) AS raise_diff
 FROM v_mk2 vm
@@ -462,13 +462,8 @@ tm.payroll_year;
    PROJEVÍ SE TO NA CENÁCH POTRAVIN ČI MZDÁCH VE STEJNÉM NEBO NÁSDUJÍCÍM ROCE VÝRAZNĚJŠÍM RŮSTEM?
 */
 
-SELECT * FROM countries c WHERE continent = 'Europe' AND government_type NOT LIKE '%Dependent%'
-AND government_type NOT LIKE '%Independent%' AND  government_type NOT LIKE '%part%' AND country = 'Liechtenstein';
-
-SELECT * FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.foodstuff = 'Papriky';
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
-WHERE ts.cur_year = 1999;
+
 SELECT
 count (DISTINCT ts.country)
 FROM t_marian_koutny_project_sql_secondary_final ts;
