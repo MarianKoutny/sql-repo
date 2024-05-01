@@ -148,7 +148,7 @@ FROM t_ec te
 JOIN t_ec te2 
     ON te.country = te2.country 
     AND te.YEAR - 1 = te2.YEAR
-    AND te.year <= 2019
+    AND te.year <= 2021
 WHERE te.continent = 'Europe');
 
 
@@ -179,7 +179,7 @@ VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
  */
 
 
--- 1.1 Vývoj průměrného platu mezi roky 2000 a 2021
+-- 1.1 Růst průměrného platu mezi roky 2000 a 2021
 
 SELECT 
 	tm.payroll_year AS prev_year,
@@ -316,7 +316,7 @@ AND tm.payroll_year IN (2006,2018)
 GROUP BY tm.payroll_year, tm.avg_price_year;
 
 
--- 2.3 Detailní rozbor, kolik kg chleba a litrů mléka si můžeme koupit podle oboru, v kterém pracujeme v letech 2006 a 2018
+-- 2.3 Detailní rozbor, kolik kg chleba a litrů mléka si můžeme koupit podle oboru, ve kterém pracujeme v letech 2006 a 2018
 
 SELECT 
 	tm.branch,
@@ -469,9 +469,9 @@ WHERE ts.country = 'Czech republic';
 
 SELECT DISTINCT 
 	tm.payroll_year AS `year`,
-	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_year,
-	round(((avg(tm.avg_wage_per_branch) - avg(tm2.avg_wage_per_branch))/avg(tm2.avg_wage_per_branch))*100,2) AS salary_raise_pct,
+	round(avg(tm.avg_wage_per_branch),0) AS avg_salary,
 	ts.GDP,
+	round(((avg(tm.avg_wage_per_branch) - avg(tm2.avg_wage_per_branch))/avg(tm2.avg_wage_per_branch))*100,2) AS salary_raise_pct,
 	ts.GDP_growth AS GDP_raise_pct
 FROM t_marian_koutny_project_sql_primary_final tm
 LEFT JOIN t_marian_koutny_project_sql_primary_final tm2 
@@ -493,7 +493,7 @@ LEFT JOIN t_marian_koutny_project_sql_primary_final tm2
 ON tm.payroll_year -1 = tm2.payroll_year
 LEFT JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year -1 = ts.cur_year
 WHERE ts.country = 'Czech republic'
-GROUP BY tm.payroll_year, ts.GDP_growth, ts.cur_year ;
+GROUP BY tm.payroll_year, ts.GDP_growth, ts.cur_year;
 
 
 -- Rust GDP v porovnani s rustem cen a mezd ve stejnem roce 
