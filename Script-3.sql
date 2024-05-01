@@ -164,7 +164,8 @@ DROP TABLE t_ec;
 /*5b) Náhled do obou finálních tabulek
  */
 
-SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
+SELECT * FROM t_marian_koutny_project_sql_primary_final tm
+WHERE tm.foodstuff = 'Banány žluté';
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
 
 
@@ -462,28 +463,30 @@ tm.payroll_year;
    PROJEVÍ SE TO NA CENÁCH POTRAVIN ČI MZDÁCH VE STEJNÉM NEBO NÁSDUJÍCÍM ROCE VÝRAZNĚJŠÍM RŮSTEM?
 */
 
-SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
+SELECT * FROM t_marian_koutny_project_sql_secondary_final ts
+WHERE ts.country = 'Czech republic';
 
 SELECT
 count (DISTINCT ts.country)
 FROM t_marian_koutny_project_sql_secondary_final ts;
 
-SELECT
-	tm.branch,
+SELECT 
 	tm.payroll_year AS `year`,
-	tm.avg_wage_per_branch AS salary,
-	tm.foodstuff,
-	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS pr_up,
-	ts.GDP_growth AS GDPup,
-	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth AS pr_GDP_d,
-	round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2 ) AS wage_up,
-	round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2) - ts.GDP_growth AS w_GDP_d
---	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - round( ( tm.avg_wage_per_branch_year - tm2.avg_wage_per_branch_year ) / tm2.avg_wage_per_branch_year * 100, 2 ) AS diff
+	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
-JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.branch = tm2.branch
-	AND tm.foodstuff = tm2.foodstuff
+GROUP BY tm.payroll_year;
+
+
+SELECT DISTINCT 
+	tm.payroll_year AS `year`,
+	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_year,
+	round(((avg(tm.avg_wage_per_branch) - avg(tm2.avg_wage_per_branch))/avg(tm2.avg_wage_per_branch))*100,2) AS salary_raise,
+	tm.foodstuff,
+	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS price_raise,
+	ts.GDP_growth AS GDP_raise
+FROM t_marian_koutny_project_sql_primary_final tm
+JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
     AND tm.payroll_year -1 = tm2.payroll_year
 JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year = ts.cur_year
 WHERE ts.country = 'Czech republic'
-ORDER BY round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) - ts.GDP_growth DESC,
-round(( tm.avg_wage_per_branch - tm2.avg_wage_per_branch ) / tm2.avg_wage_per_branch * 100, 2) - ts.GDP_growth DESC;
+GROUP BY tm.payroll_year, tm.foodstuff, round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2), ts.GDP_growth;
