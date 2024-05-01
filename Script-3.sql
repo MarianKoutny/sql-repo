@@ -14,8 +14,8 @@ SELECT * FROM czechia_payroll_industry_branch cpib;
 SELECT * FROM czechia_payroll_calculation cpc; 
 SELECT * FROM czechia_payroll_unit cpu;
 SELECT * FROM czechia_payroll_value_type cpvt;
-SELECT * FROM countries c;
-SELECT * FROM economies e;
+SELECT * FROM countries c WHERE continent = 'Europe';
+SELECT * FROM economies e WHERE country = 'Montenegro';
 -------------------------------------------------------------------------------------------------------------------
 /*
 2. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
@@ -71,7 +71,8 @@ SELECT * FROM t_mk_price tmp;
 CREATE OR REPLACE TABLE t_mk_price_general AS (
 SELECT 
 	tmp.food AS foodstuff,
-	tmp.rok AS rok,round(sum(tmp.avg_price)/count(tmp.rok),2) AS avg_price_year
+	tmp.rok AS rok,
+	round(sum(tmp.avg_price)/count(tmp.rok),2) AS avg_price_year
 FROM t_mk_price tmp
 WHERE tmp.region IS NOT NULL
 GROUP BY tmp.food, tmp.rok
@@ -165,8 +166,9 @@ DROP TABLE t_ec;
  */
 
 SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
-WHERE tm.foodstuff = 'Banány žluté';
-SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
+WHERE tm.avg_price_year IS NULL ;
+SELECT  *
+FROM t_marian_koutny_project_sql_secondary_final ts WHERE ts.country = 'Montenegro';
 
 
 -------------------------------------------------------------------------------------------------------------------------------
