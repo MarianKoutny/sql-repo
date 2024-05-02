@@ -186,7 +186,7 @@ SELECT
 	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_prev_year,
 	tm2.payroll_year AS current_year,
 	round(avg(tm2.avg_wage_per_branch),0) AS avg_salary_current_year,
-	round(((avg(tm2.avg_wage_per_branch) - avg(tm.avg_wage_per_branch))/avg(tm.avg_wage_per_branch))*100,2) AS salary_raise
+	round(((avg(tm2.avg_wage_per_branch) - avg(tm.avg_wage_per_branch))/avg(tm.avg_wage_per_branch))*100,2) AS salary_raise_pct
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON
 tm2.payroll_year -1 = tm.payroll_year
@@ -287,7 +287,7 @@ ORDER BY count (*) DESC;
 
 
 /*
- * 2. KOLIK JE MOŽNÉ SI KOUPIT LITRŮ MLÉKA A KILOGRAMŮ CHLEBA ZA PRVNÍ A POSLEDNÍ SROVNATELNÉ OBDOBÍ V DOSTUPNÝCH DATECH CEN A MEZD?
+2. KOLIK JE MOŽNÉ SI KOUPIT LITRŮ MLÉKA A KILOGRAMŮ CHLEBA ZA PRVNÍ A POSLEDNÍ SROVNATELNÉ OBDOBÍ V DOSTUPNÝCH DATECH CEN A MEZD?
  */
 
 -- 2.1 Přehled, kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
@@ -328,17 +328,15 @@ SELECT
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.foodstuff IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
 AND tm.payroll_year IN (2006,2018)
-ORDER BY tm.payroll_year ,tm.foodstuff, round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC, tm.branch;
+ORDER BY tm.branch, tm.foodstuff, tm.payroll_year, round (tm.avg_wage_per_branch/tm.avg_price_year,0)DESC;
 
 
 
 
 
 /*
- * 3. KTERÁ KATEGORIE POTRAVIN ZDRAŽUJE NEJPOMALEJI (JE U NÍ NEJNIŽŠÍ PERCENTUÁLNÍ MEZIROČNÍ NÁRŮST)?
+3. KTERÁ KATEGORIE POTRAVIN ZDRAŽUJE NEJPOMALEJI (JE U NÍ NEJNIŽŠÍ PERCENTUÁLNÍ MEZIROČNÍ NÁRŮST)?
 */
-
--- pozn. Jakostní víno je z výběru odebráno pro příliš malý vzorek
 
 -- 3.1 Potravina, která za pozorované období měla nejnižší jednoletý meziroční nárůst ceny
 
