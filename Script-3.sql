@@ -369,6 +369,18 @@ WHERE tm.avg_price_year IS NOT NULL
 ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.foodstuff;
 
 
+-- Výpočet bokem pro Jakostní víno
+
+SELECT DISTINCT
+	tm.foodstuff AS item,
+	tm2.avg_price_year AS price_2015,
+	tm.avg_price_year AS price_2018,
+	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
+FROM t_marian_koutny_project_sql_primary_final tm
+JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
+AND tm.payroll_year -3 = tm2.payroll_year
+WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Jakostní víno bíle'
+ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.foodstuff;
 
 
 
