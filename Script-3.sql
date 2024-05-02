@@ -412,9 +412,9 @@ ORDER BY vm.`year`, round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.a
 SELECT 
 	tm.branch,
 	tm.payroll_year,
+	tm.avg_wage_per_branch,
 	tm.foodstuff,
 	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) AS price_raise,
-	tm.avg_wage_per_branch,
 	round((tm.avg_wage_per_branch - tm2.avg_wage_per_branch) / tm2.avg_wage_per_branch * 100, 2 ) AS salary_raise,
 	round((tm.avg_price_year-tm2.avg_price_year)/tm2.avg_price_year*100,2) - round((tm.avg_wage_per_branch- tm2.avg_wage_per_branch) / tm2.avg_wage_per_branch * 100, 2 ) AS diff
 FROM t_marian_koutny_project_sql_primary_final tm
@@ -435,7 +435,7 @@ tm.payroll_year;
 
 -- 5.1 Vývoj růstu HDP a průměrné mzdy a jejich souvislost ve stejném roce
 
-SELECT DISTINCT 
+SELECT DISTINCT
 	tm.payroll_year AS `year`,
 	round(avg(tm.avg_wage_per_branch),0) AS avg_salary,
 	ts.GDP,
