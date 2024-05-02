@@ -7,7 +7,7 @@
  */
 SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;
-SELECT * FROM czechia_price_category cpc ORDER BY name ASC ;
+SELECT * FROM czechia_price_category cpc ORDER BY name ASC;
 SELECT * FROM czechia_price cp;
 SELECT * FROM czechia_payroll cp;
 SELECT * FROM czechia_payroll_industry_branch cpib;
