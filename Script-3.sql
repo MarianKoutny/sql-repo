@@ -369,29 +369,17 @@ WHERE tm.avg_price_year IS NOT NULL
 ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.foodstuff;
 
 
--- Výpočet bokem pro Jakostní víno
-
-SELECT DISTINCT
-	tm.foodstuff AS item,
-	tm2.avg_price_year AS price_2015,
-	tm.avg_price_year AS price_2018,
-	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_increase
-FROM t_marian_koutny_project_sql_primary_final tm
-JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
-AND tm.payroll_year -3 = tm2.payroll_year
-WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Jakostní víno bíle'
-ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) ASC, tm.foodstuff;
 
 
 
 /*
- * 4. EXISTUJE ROK, VE KTERÉM BYL MEZIROČNÍ NÁRŮST CEN POTRAVIN VÝRAZNĚ VYŠŠÍ NEŽ RŮST MEZD (VĚTŠÍ NEŽ 10 %)?
+4. EXISTUJE ROK, VE KTERÉM BYL MEZIROČNÍ NÁRŮST CEN POTRAVIN VÝRAZNĚ VYŠŠÍ NEŽ RŮST MEZD (VĚTŠÍ NEŽ 10 %)?
 */
 
 
 -- 4.1 Prumerny plat v danem roce ve vsech odvetvich dohromady
 
-SELECT 
+/*SELECT 
 	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
 FROM t_marian_koutny_project_sql_primary_final tm
@@ -406,10 +394,10 @@ SELECT
 	round(sum(tm.avg_price_year)/count(tm.avg_price_year),2) AS avg_price_per_year
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL
-GROUP BY tm.payroll_year, tm.foodstuff;
+GROUP BY tm.payroll_year, tm.foodstuff;*/
 
 
--- 4.3 Vytvoření pohledu, na němž se bude porovnávat rozdíl nárůstu cen a mezd
+-- 4.1 Vytvoření pohledu, na němž se bude porovnávat rozdíl nárůstu cen a mezd
 
 CREATE OR REPLACE VIEW v_mk2 AS (
 SELECT 
@@ -423,7 +411,7 @@ GROUP BY tm.payroll_year, tm.foodstuff
 );
 
 
--- 4.4 Rozdíl mezi růstem cen potravin a růstem mezd ve sledovaném období
+-- 4.2 Rozdíl mezi růstem cen potravin a růstem mezd ve sledovaném období
 
 SELECT 
 	vm.foodstuff,
@@ -442,11 +430,11 @@ JOIN v_mk2 vm2 ON vm.`year`-1 = vm2.`year`
 AND vm2.foodstuff = vm.foodstuff
 WHERE round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
 	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) > 10
-ORDER BY round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
+ORDER BY vm.`year`, round((vm.avg_price_per_year - vm2.avg_price_per_year)/vm2.avg_price_per_year * 100 ,2) - 
 	round((vm.avg_slr_year - vm2.avg_slr_year)/vm2.avg_slr_year *100, 2) DESC;
 
 
--- 4.5 Rozdíl mezi růstem cen a mezd v daném období vztaženo na detail v jednotlivých odvětvích
+-- 4.3 Rozdíl mezi růstem cen a mezd v daném období vztaženo na detail v jednotlivých odvětvích
 
 SELECT 
 	tm.branch,
