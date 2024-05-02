@@ -103,9 +103,7 @@ LEFT JOIN t_mk_price_general tmg ON tmw.payroll_year = tmg.rok
 3a) Modifikace sloupce a vytvoření indexu
  */
 
-ALTER TABLE t_marian_koutny_project_sql_primary_final 
-MODIFY COLUMN branch varchar(70);
-
+ALTER TABLE t_marian_koutny_project_sql_primary_final MODIFY COLUMN branch varchar(70);
 CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final(branch);
 
 
@@ -177,7 +175,6 @@ VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
 /*
  1. ROSTOU V PRŮBĚHU LET MZDY VE VŠECH ODVĚTVÍCH, NEBO V NĚKTERÝCH KLESAJÍ?
  */
-
 
 -- 1.1 Růst průměrného platu mezi roky 2000 a 2021
 
@@ -285,7 +282,6 @@ ORDER BY count (*) DESC;
 
 
 
-
 /*
 2. KOLIK JE MOŽNÉ SI KOUPIT LITRŮ MLÉKA A KILOGRAMŮ CHLEBA ZA PRVNÍ A POSLEDNÍ SROVNATELNÉ OBDOBÍ V DOSTUPNÝCH DATECH CEN A MEZD?
  */
@@ -333,7 +329,6 @@ ORDER BY tm.branch, tm.foodstuff, tm.payroll_year, round (tm.avg_wage_per_branch
 
 
 
-
 /*
 3. KTERÁ KATEGORIE POTRAVIN ZDRAŽUJE NEJPOMALEJI (JE U NÍ NEJNIŽŠÍ PERCENTUÁLNÍ MEZIROČNÍ NÁRŮST)?
 */
@@ -371,31 +366,9 @@ ORDER BY round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year 
 
 
 
-
 /*
 4. EXISTUJE ROK, VE KTERÉM BYL MEZIROČNÍ NÁRŮST CEN POTRAVIN VÝRAZNĚ VYŠŠÍ NEŽ RŮST MEZD (VĚTŠÍ NEŽ 10 %)?
 */
-
-
--- 4.1 Prumerny plat v danem roce ve vsech odvetvich dohromady
-
-/*SELECT 
-	tm.payroll_year AS `year`,
-	round(sum(tm.avg_wage_per_branch)/count(tm.avg_wage_per_branch),0) AS avg_slr_year
-FROM t_marian_koutny_project_sql_primary_final tm
-GROUP BY tm.payroll_year;
-
-
--- 4.2 Průmerná cena jednotlivých potravin v daných letech
-
-SELECT 
-	tm.payroll_year AS `year`,
-	tm.foodstuff,
-	round(sum(tm.avg_price_year)/count(tm.avg_price_year),2) AS avg_price_per_year
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL
-GROUP BY tm.payroll_year, tm.foodstuff;*/
-
 
 -- 4.1 Vytvoření pohledu, na němž se bude porovnávat rozdíl nárůstu cen a mezd
 
@@ -455,15 +428,10 @@ tm.payroll_year;
 
 
 
-
 /*
 5. MÁ VÝŠKA HDP VLIV NA ZMĚNY VE MZDÁCH A CENÁCH POTRAVIN? NEBOLI, POKUD HDP VZROSTE VÝRAZNĚJI V JEDNOM ROCE, 
    PROJEVÍ SE TO NA CENÁCH POTRAVIN ČI MZDÁCH VE STEJNÉM NEBO NÁSDUJÍCÍM ROCE VÝRAZNĚJŠÍM RŮSTEM?
 */
-
-SELECT * FROM t_marian_koutny_project_sql_secondary_final ts
-WHERE ts.country = 'Czech republic';
-
 
 -- 5.1 Vývoj růstu HDP a průměrné mzdy a jejich souvislost ve stejném roce
 
@@ -478,7 +446,7 @@ FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 
 ON tm.payroll_year -1 = tm2.payroll_year
 JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year = ts.cur_year
-WHERE ts.country = 'Czech republic' -- AND ts.GDP_growth > 5
+WHERE ts.country = 'Czech republic' AND ts.GDP_growth > 5
 GROUP BY tm.payroll_year, ts.GDP_growth, ts.GDP;
 
 
@@ -496,7 +464,7 @@ FROM t_marian_koutny_project_sql_primary_final tm
 LEFT JOIN t_marian_koutny_project_sql_primary_final tm2 
 ON tm.payroll_year -1 = tm2.payroll_year
 LEFT JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year -1 = ts.cur_year
-WHERE ts.country = 'Czech republic'
+WHERE ts.country = 'Czech republic' AND ts.GDP_growth > 5
 GROUP BY tm.payroll_year, ts.GDP_growth, ts.cur_year, ts.GDP;
 
 
@@ -504,8 +472,6 @@ GROUP BY tm.payroll_year, ts.GDP_growth, ts.cur_year, ts.GDP;
 
 SELECT DISTINCT 
 	tm.payroll_year AS `year`,
---	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_year,
---	round(((avg(tm.avg_wage_per_branch) - avg(tm2.avg_wage_per_branch))/avg(tm2.avg_wage_per_branch))*100,2) AS salary_raise_pct,
 	tm.foodstuff,
 	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS price_raise_pct,
 	ts.GDP_growth AS GDP_raise_pct,
@@ -514,16 +480,13 @@ FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
     AND tm.payroll_year -1 = tm2.payroll_year
 JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year = ts.cur_year
-WHERE ts.country = 'Czech republic' AND ts.GDP_growth > 3;
--- GROUP BY tm.foodstuff, tm.payroll_year, round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2), ts.GDP_growth;
+WHERE ts.country = 'Czech republic' AND ts.GDP_growth > 5;
 
 
 -- 5.4 Růst HDP v roce x a cen potravin v roce x+1 a jejich srovnání
 
 SELECT DISTINCT 
 	tm.payroll_year AS price_year,
---	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_year,
---	round(((avg(tm.avg_wage_per_branch) - avg(tm2.avg_wage_per_branch))/avg(tm2.avg_wage_per_branch))*100,2) AS salary_raise_pct,
 	tm.foodstuff,
 	round(( tm.avg_price_year - tm2.avg_price_year)/tm2.avg_price_year*100,2) AS price_raise_pct,
 	tm2.payroll_year AS GDP_year,
@@ -533,5 +496,5 @@ FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
     AND tm.payroll_year -1 = tm2.payroll_year
 JOIN t_marian_koutny_project_sql_secondary_final ts ON tm.payroll_year -1 = ts.cur_year
-WHERE ts.country = 'Czech republic' AND ts.GDP_growth > 3
-ORDER BY tm2.payroll_year, tm.foodstuff;
+WHERE ts.country = 'Czech republic' AND ts.GDP_growth > 5
+ORDER BY tm.foodstuff;
