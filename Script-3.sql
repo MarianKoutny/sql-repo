@@ -292,7 +292,7 @@ SELECT
 	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
 	tm.avg_price_year AS price_of_bread_per_kg,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS Kgs_of_bread_we_can_buy
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS kgs_of_bread_we_can_buy
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Chléb konzumní kmínový'
 AND tm.payroll_year IN (2006,2018)
@@ -305,7 +305,7 @@ SELECT
 	tm.payroll_year AS `year`,
 	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
 	tm.avg_price_year AS price_milk_per_liter,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS Litres_of_milk_we_can_buy
+	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS litres_of_milk_we_can_buy
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Mléko polotučné pasterované'
 AND tm.payroll_year IN (2006,2018)
@@ -317,10 +317,10 @@ GROUP BY tm.payroll_year, tm.avg_price_year;
 SELECT 
 	tm.branch,
 	tm.payroll_year,
-	tm.avg_wage_per_branch,
+	tm.avg_wage_per_branch AS average_salary,
 	tm.foodstuff,
 	tm.avg_price_year,
-	round (tm.avg_wage_per_branch/tm.avg_price_year,0) AS how_much
+	round (tm.avg_wage_per_branch/tm.avg_price_year,0) AS how_much_foodstuff_we_can_buy
 FROM t_marian_koutny_project_sql_primary_final tm
 WHERE tm.foodstuff IN ('Mléko polotučné pasterované','Chléb konzumní kmínový')
 AND tm.payroll_year IN (2006,2018)
