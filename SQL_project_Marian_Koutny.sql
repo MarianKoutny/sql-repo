@@ -2,6 +2,8 @@
  SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
  */
 
+-- ČÁST PRVNÍ - VYTVOŘENÍ DVOU FINÁLNÍCH TABULEK K PROJEKTU
+
 /*
 1. Výpis datových setů potřebných k projektu
  */
@@ -170,9 +172,9 @@ SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
 SELECT * FROM t_marian_koutny_project_sql_secondary_final ts;
 
 -------------------------------------------------------------------------------------------------------------------------------
-/*
-VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
- */
+
+-- ČÁST DRUHÁ - VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
+
 
 /*
  1. ROSTOU V PRŮBĚHU LET MZDY VE VŠECH ODVĚTVÍCH, NEBO V NĚKTERÝCH KLESAJÍ?
