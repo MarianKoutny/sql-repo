@@ -19,7 +19,7 @@ SELECT * FROM czechia_payroll_unit cpu;
 SELECT * FROM czechia_payroll_value_type cpvt;
 SELECT * FROM countries c;
 SELECT * FROM economies e;
--------------------------------------------------------------------------------------------------------------------
+
 /*
 2. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
  */
