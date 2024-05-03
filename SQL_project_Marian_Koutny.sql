@@ -9,6 +9,7 @@ SELECT * FROM czechia_region cr;
 SELECT * FROM czechia_district cd;		
 SELECT * FROM czechia_price_category cpc ORDER BY name ASC;
 SELECT * FROM czechia_price cp;
+SELECT * FROM czechia_price cp;
 SELECT * FROM czechia_payroll cp;
 SELECT * FROM czechia_payroll_industry_branch cpib;
 SELECT * FROM czechia_payroll_calculation cpc; 
@@ -27,12 +28,12 @@ SELECT * FROM economies e;
  */
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
-SELECT 
+SELECT
 	cpib.name AS branch,
 	cp.payroll_year,
 	round(sum (value)/count (payroll_year),0) AS avg_wage_per_branch
 FROM czechia_payroll cp
-JOIN czechia_payroll_industry_branch cpib
+LEFT JOIN czechia_payroll_industry_branch cpib
 ON cp.industry_branch_code = cpib.code
 WHERE value_type_code = 5958 AND industry_branch_code IS NOT NULL
 GROUP BY cpib.name, cp.payroll_year
@@ -52,9 +53,9 @@ SELECT
 	cr.name AS region,
 	round(sum(cp.value)/count(YEAR(cp.date_from)),2) AS avg_price
 FROM czechia_price cp
-JOIN czechia_price_category cpc
+LEFT JOIN czechia_price_category cpc
 	ON cp.category_code = cpc.code
-JOIN czechia_region cr
+LEFT JOIN czechia_region cr
 	ON cp.region_code = cr.code
 WHERE cr.name IS NOT NULL
 GROUP BY cpc.name, cr.name, YEAR(cp.date_from)
@@ -182,6 +183,19 @@ VÝZKUMNÉ OTÁZKY PRO ANALYTICKÉ ODDĚLENÍ
 SELECT 
 	tm.payroll_year AS prev_year,
 	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_prev_year,
+	tm.payroll_year +1 AS current_year,
+	lead(round(avg(tm.avg_wage_per_branch),0),1) OVER (ORDER BY tm.payroll_year) AS avg_salary_current_year,
+	round((lead(round(avg(tm.avg_wage_per_branch),0),1) OVER (ORDER BY tm.payroll_year) - 
+	round(avg(tm.avg_wage_per_branch),0))/round(avg(tm.avg_wage_per_branch),0)*100,2) AS salary_raise_pct
+FROM t_marian_koutny_project_sql_primary_final tm
+GROUP BY  tm.payroll_year, tm.payroll_year+1
+LIMIT 21;
+
+-- nebo
+
+SELECT 
+	tm.payroll_year AS prev_year,
+	round(avg(tm.avg_wage_per_branch),0) AS avg_salary_prev_year,
 	tm2.payroll_year AS current_year,
 	round(avg(tm2.avg_wage_per_branch),0) AS avg_salary_current_year,
 	round(((avg(tm2.avg_wage_per_branch) - avg(tm.avg_wage_per_branch))/avg(tm.avg_wage_per_branch))*100,2) AS salary_raise_pct
@@ -301,15 +315,31 @@ GROUP BY tm.payroll_year, tm.avg_price_year;
 
 -- 2.2 Přehled, kolik litrů mléka si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
 
+WITH milk_2006 AS (
+		SELECT * FROM t_marian_koutny_project_sql_primary_final tm
+		WHERE tm.foodstuff = 'Mléko polotučné pasterované'
+		AND tm.payroll_year = 2006
+),
+milk_2018 AS (
+		SELECT * FROM t_marian_koutny_project_sql_primary_final tm
+		WHERE tm.foodstuff = 'Mléko polotučné pasterované'
+		AND tm.payroll_year = 2018
+)
 SELECT 
-	tm.payroll_year AS `year`,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
-	tm.avg_price_year AS price_milk_per_liter,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS litres_of_milk_we_can_buy
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Mléko polotučné pasterované'
-AND tm.payroll_year IN (2006,2018)
-GROUP BY tm.payroll_year, tm.avg_price_year;
+	payroll_year AS `year`,
+	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch),0) AS average_salary,
+	avg_price_year AS price_milk_per_liter,
+	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch)/avg_price_year,0) AS litres_of_milk_we_can_buy
+FROM milk_2006
+GROUP BY avg_price_year, payroll_year
+UNION 
+SELECT 
+	payroll_year AS `year`,
+	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch),0) AS average_salary,
+	avg_price_year AS price_milk_per_liter,
+	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch)/avg_price_year,0) AS litres_of_milk_we_can_buy
+FROM milk_2018
+GROUP BY avg_price_year, payroll_year;
 
 
 -- 2.3 Detailní rozbor, kolik kg chleba a litrů mléka si můžeme koupit podle oboru, ve kterém pracujeme v letech 2006 a 2018
@@ -341,7 +371,7 @@ SELECT DISTINCT
 	tm.foodstuff,
 	tm2.avg_price_year AS price_start_year,
 	tm.avg_price_year AS price_end_year,
-	round( ( tm.avg_price_year - tm2.avg_price_year ) / tm2.avg_price_year * 100, 2 ) as price_decrease_pct
+	round((tm.avg_price_year - tm2.avg_price_year )/tm2.avg_price_year * 100,2) as price_decrease_pct
 FROM t_marian_koutny_project_sql_primary_final tm
 JOIN t_marian_koutny_project_sql_primary_final tm2 ON tm.foodstuff = tm2.foodstuff
 AND tm.payroll_year -1 = tm2.payroll_year
@@ -384,7 +414,8 @@ GROUP BY tm.payroll_year, tm.foodstuff
 );
 
 
--- 4.2 Rozdíl mezi růstem cen potravin a růstem mezd ve sledovaném období
+-- 4.2 Rozdíl mezi růstem cen potravin a růstem mezd ve sledovaném období, kde byl růst cen potravin o více než 10% vyšší
+-- než růst mezd.
 
 SELECT 
 	vm.foodstuff,
