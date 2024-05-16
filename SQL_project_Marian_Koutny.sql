@@ -127,48 +127,7 @@ ORDER BY count (*) DESC;
 2. KOLIK JE MOŽNÉ SI KOUPIT LITRŮ MLÉKA A KILOGRAMŮ CHLEBA ZA PRVNÍ A POSLEDNÍ SROVNATELNÉ OBDOBÍ V DOSTUPNÝCH DATECH CEN A MEZD?
  */
 
--- 2.1 Přehled, kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
-
-SELECT 
-	tm.payroll_year AS `year`,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch),0) AS average_salary,
-	tm.avg_price_year AS price_of_bread_per_kg,
-	round(sum(tm.avg_wage_per_branch )/count(tm.avg_wage_per_branch)/tm.avg_price_year,0) AS kgs_of_bread_we_can_buy
-FROM t_marian_koutny_project_sql_primary_final tm
-WHERE tm.avg_price_year IS NOT NULL AND tm.foodstuff = 'Chléb konzumní kmínový'
-AND tm.payroll_year IN (2006,2018)
-GROUP BY tm.payroll_year, tm.avg_price_year;
-
-
--- 2.2 Přehled, kolik litrů mléka si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
-
-WITH milk_2006 AS (
-		SELECT * FROM t_marian_koutny_project_sql_primary_final tm
-		WHERE tm.foodstuff = 'Mléko polotučné pasterované'
-		AND tm.payroll_year = 2006
-),
-milk_2018 AS (
-		SELECT * FROM t_marian_koutny_project_sql_primary_final tm
-		WHERE tm.foodstuff = 'Mléko polotučné pasterované'
-		AND tm.payroll_year = 2018
-)
-SELECT 
-	payroll_year AS `year`,
-	round(sum(avg_wage_per_branch)/count(avg_wage_per_branch),0) AS average_salary,
-	avg_price_year AS price_milk_per_liter,
-	round(sum(avg_wage_per_branch)/count(avg_wage_per_branch)/avg_price_year,0) AS litres_of_milk_we_can_buy
-FROM milk_2006
-GROUP BY avg_price_year, payroll_year
-UNION 
-SELECT 
-	payroll_year AS `year`,
-	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch),0) AS average_salary,
-	avg_price_year AS price_milk_per_liter,
-	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch)/avg_price_year,0) AS litres_of_milk_we_can_buy
-FROM milk_2018
-GROUP BY avg_price_year, payroll_year;
-
--- slter
+-- 2.1 Přehled, kolik litrů mléka a kolik kg chleba si můžeme koupit v prvním a posledním sledovaném období (roky 2006 a 2018)
 
 WITH milk_2006 AS (
 		SELECT * FROM t_marian_koutny_project_sql_primary_final tm
@@ -205,6 +164,8 @@ UNION
 SELECT 
 	round(sum(avg_wage_per_branch )/count(avg_wage_per_branch)/avg_price_year,0) AS litres_of_milk_or_kgs_of_bread_we_can_buy
 FROM bread_2018;
+
+
 
 
 /*
