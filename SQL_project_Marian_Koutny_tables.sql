@@ -1,32 +1,14 @@
-/*
- SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
- */
+-- SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
 
--- ČÁST PRVNÍ - VYTVOŘENÍ DVOU FINÁLNÍCH TABULEK K PROJEKTU
+-- ČÁST PRVNÍ - VYTVOŘENÍ FINÁLNÍCH ZDROJOVÝCH TABULEK PRO VÝZKUMNÉ OTÁZKY
 
 /*
-1. Výpis datových setů potřebných k projektu
- */
-SELECT * FROM czechia_region cr;
-SELECT * FROM czechia_district cd;		
-SELECT * FROM czechia_price_category cpc ORDER BY name ASC;
-SELECT * FROM czechia_price cp;
-SELECT * FROM czechia_price cp;
-SELECT * FROM czechia_payroll cp;
-SELECT * FROM czechia_payroll_industry_branch cpib;
-SELECT * FROM czechia_payroll_calculation cpc; 
-SELECT * FROM czechia_payroll_unit cpu;
-SELECT * FROM czechia_payroll_value_type cpvt;
-SELECT * FROM countries c;
-SELECT * FROM economies e;
-
-/*
-2. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
+1. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
  */
 
 
 /*
-2a) Vývoj průměrných platů v jednotlivých odvětvích mezi lety 2000 a 2021 - pomocná tabulka t_mk_wage
+1a) Vývoj průměrných platů v jednotlivých odvětvích mezi lety 2000 a 2021 - pomocná tabulka t_mk_wage
  */
 
 CREATE OR REPLACE TABLE t_mk_wage AS (
@@ -45,7 +27,7 @@ SELECT * FROM t_mk_wage tmw;
 
 
 /*
-2b) Vývoj průměrných cen jednotlivých potravin v letech 2006 až 2018 v daných krajích - tabulka t_mk_price
+1b) Vývoj průměrných cen jednotlivých potravin v letech 2006 až 2018 v daných krajích - tabulka t_mk_price
  */
 
 CREATE OR REPLACE TABLE t_mk_price AS (
@@ -68,7 +50,7 @@ SELECT * FROM t_mk_price tmp;
 
 
 /*
-2c) Vývoj průměrných cen potravin v letech 2006 až 2018 (průměr za všechny kraje) - pomocná tabulka t_mk_price_general
+1c) Vývoj průměrných cen potravin v letech 2006 až 2018 (průměr za všechny kraje) - pomocná tabulka t_mk_price_general
  */
 
 CREATE OR REPLACE TABLE t_mk_price_general AS (
@@ -88,7 +70,7 @@ SELECT * FROM t_mk_price_general tmg;
 
 
 /*
-3. Vytvoření první finální tabulky t_Marian_Koutny_project_SQL_primary_final:
+2. Vytvoření první finální tabulky t_Marian_Koutny_project_SQL_primary_final:
  */
 
 CREATE OR REPLACE TABLE t_Marian_Koutny_project_SQL_primary_final AS (
@@ -103,7 +85,7 @@ LEFT JOIN t_mk_price_general tmg ON tmw.payroll_year = tmg.`year`
 );
 
 /*
-3a) Modifikace sloupce a vytvoření indexu
+2a) Modifikace sloupce a vytvoření indexu
  */
 
 ALTER TABLE t_marian_koutny_project_sql_primary_final MODIFY COLUMN branch varchar(70);
@@ -111,7 +93,7 @@ CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final
 
 
 /*
-4. Vytvoření pomocné tabulky pro sekundární tabulku projektu - tabulka t_ec
+3. Vytvoření pomocné tabulky pro sekundární tabulku projektu - tabulka t_ec
  */
 
 CREATE OR REPLACE TABLE t_ec AS (
@@ -134,7 +116,7 @@ SELECT * FROM t_ec te;
 
 
 /*
-5. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final
+4. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final
  */
 
 CREATE OR REPLACE TABLE t_marian_koutny_project_sql_secondary_final AS (
@@ -156,7 +138,7 @@ WHERE te.continent = 'Europe'
 
 
 /*
-5a) DROP již nepotřebných pomocných tabulek
+4a) DROP již nepotřebných pomocných tabulek
  */
 DROP TABLE t_mk_price_general;
 DROP TABLE t_mk_price;
@@ -165,7 +147,7 @@ DROP TABLE t_ec;
 
 
 /* 
-5b) Náhled do obou finálních tabulek
+4b) Náhled do obou finálních tabulek
  */
 
 SELECT * FROM t_marian_koutny_project_sql_primary_final tm;
