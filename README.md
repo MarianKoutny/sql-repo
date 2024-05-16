@@ -7,7 +7,8 @@ jak se v čase vyvíjí cena jednotlivých potravin, mzdy v různých pracovníc
 Na základě analýzy datových sad sestavím odpovědi na výzkumné otázky pro tiskové oddělení. 
 
 Tento repozitář obsahuje 2 SQL soubory, průvodní listinu a excel s korelacemi dvou množin. První SQL file získává z různých zdrojů 
-uložených v databázi potřebná data a na základě sady příkazů generuje 2 tabulky, ve kterých budu hledat odpovědi.
+uložených v databázi (databáze obsahuje datové sady dostupné veřejně na portálu Otevřená data https://opendata.gov.cz)
+potřebná data a na základě sady příkazů generuje 2 tabulky, ve kterých budu hledat odpovědi.
 
 Druhý SQL file se snaží odpovědět na otázky, které vytýčilo tiskové oddělení. Celý postup je zachycen krok po kroku v průvodní listině
 ve formátu docx. Excel file je pomocný pouze k poslední výzkumné otázce, 
