@@ -1,10 +1,6 @@
--- SQL PROJECT - ENGETO DATOVÁ AKADEMIE (START 22/02/2024) - MARIAN KOUTNÝ
-
 -- ČÁST PRVNÍ - VYTVOŘENÍ FINÁLNÍCH ZDROJOVÝCH TABULEK PRO VÝZKUMNÉ OTÁZKY
 
-/*
-1. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
- */
+-- 1. Vytvoření pomocných tabulek, pomoci kterých se dostaneme k první finální tabulce
 
 
 /*
@@ -69,9 +65,8 @@ SELECT * FROM t_mk_wage tmw;
 SELECT * FROM t_mk_price_general tmg;
 
 
-/*
-2. Vytvoření první finální tabulky t_Marian_Koutny_project_SQL_primary_final:
- */
+
+-- 2. Vytvoření první finální tabulky t_Marian_Koutny_project_SQL_primary_final:
 
 CREATE OR REPLACE TABLE t_Marian_Koutny_project_SQL_primary_final AS (
 SELECT
@@ -92,9 +87,7 @@ ALTER TABLE t_marian_koutny_project_sql_primary_final MODIFY COLUMN branch varch
 CREATE OR REPLACE INDEX i_tm_branch ON t_marian_koutny_project_sql_primary_final(branch);
 
 
-/*
-3. Vytvoření pomocné tabulky pro sekundární tabulku projektu - tabulka t_ec
- */
+-- 3. Vytvoření pomocné tabulky pro sekundární tabulku projektu - tabulka t_ec
 
 CREATE OR REPLACE TABLE t_ec AS (
 SELECT 
@@ -115,9 +108,7 @@ ORDER BY e.country ASC, e.`year` DESC
 SELECT * FROM t_ec te;
 
 
-/*
-4. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final
- */
+-- 4. Vytvoření druhé finální tabulky t_marian_koutny_project_sql_secondary_final
 
 CREATE OR REPLACE TABLE t_marian_koutny_project_sql_secondary_final AS (
 SELECT 
