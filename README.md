@@ -10,5 +10,6 @@ Tento repozitář obsahuje 2 SQL soubory, průvodní listinu a excel s korelacem
 uložených v databázi potřebná data a na základě sady příkazů generuje 2 tabulky, ve kterých budu hledat odpovědi.
 
 Druhý SQL file se snaží odpovědět na otázky, které vytýčilo tiskové oddělení. Celý postup je zachycen krok po kroku v průvodní listině
-ve formátu docx.
+ve formátu docx. Excel file je pomocný pouze k poslední výzkumné otázce, 
+kde naznačuje souvislosti mezi růstem HDP a cenami potravin/mzdami.
 
