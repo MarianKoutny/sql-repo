@@ -1,11 +1,14 @@
 # Průzkum dostupnosti základních potravin pro občany ČR
 
 Účelem tohoto výzkumu bylo zjistit dostupnost běžných potravin na základě zjištěných cen těchto potravin v čase 
-a na ukazateli vývoje průměrných mezd v ČR.
+a na ukazateli vývoje průměrných mezd v ČR. Všechna měření a dostupná data jsou zanesena v databázi, ze které zpracuji krátkou analýzu, 
+jak se v čase vyvíjí cena jednotlivých potravin, mzdy v různých pracovních odvětvích a také s tím spjatá kupní síla občanů ČR.
 
-Všechna měření a dostupná data jsou zanesena v databázi, ze které zpracujeme krátkou analýzu, jak se v čase vyvíjí cena
-jednotlivých potravin, mzdy v různých pracovních odvětvích a také s tím spjatá kupní síla občanů ČR.
+Na základě analýzy datových sad sestavím odpovědi na výzkumné otázky pro tiskové oddělení. 
 
-Na základě analýzy datových sad sestavíme odpovědi na výzkumné otázky pro tiskové oddělení, které je následně může komunikovat
-široké veřejnosti.
+Tento repozitář obsahuje 2 SQL soubory, průvodní listinu a excel s korelacemi dvou množin. První SQL file získává z různých zdrojů 
+uložených v databázi potřebná data a na základě sady příkazů generuje 2 tabulky, ve kterých budu hledat odpovědi.
+
+Druhý SQL file se snaží odpovědět na otázky, které vytýčilo tiskové oddělení. Celý postup je zachycen krok po kroku v průvodní listině
+ve formátu docx.
 
