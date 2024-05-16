@@ -1,4 +1,4 @@
-# Průzkum dostupnosti potravin pro občany ČR na základě zjištěných údajích o cenách potravin a průměrných mzdách
+# Průzkum dostupnosti základních potravin pro občany ČR
 
 Účelem tohoto výzkumu bylo zjistit dostupnost běžných potravin na základě zjištěných cen těchto potravin v čase 
 a na ukazateli vývoje průměrných mezd v ČR.
