@@ -99,8 +99,8 @@ SELECT
 	c.continent
 FROM economies e
 JOIN countries c ON e.country = c.country 
-WHERE c.government_type NOT LIKE '%Territory%' and c.government_type NOT LIKE '%of%'
-and c.government_type NOT LIKE '%administrated%'and c.government_type NOT LIKE '%occupied%'
+WHERE c.government_type NOT LIKE '%Territory%' AND c.government_type NOT LIKE '%of%'
+AND c.government_type NOT LIKE '%administrated%'AND c.government_type NOT LIKE '%occupied%'
 AND e.GDP IS NOT NULL  AND e.`year` BETWEEN 2000 AND 2021
 ORDER BY e.country ASC, e.`year` DESC 
 );
@@ -115,8 +115,8 @@ SELECT
 	te.country, 
 	round(te.GDP,0) AS GDP,
 	te.YEAR AS cur_year, 
-	te2.YEAR as year_prev,
-	round( ( te.GDP - te2.GDP ) / te2.GDP * 100, 2 ) as GDP_growth,
+	te2.YEAR AS year_prev,
+	round( ( te.GDP - te2.GDP ) / te2.GDP * 100, 2 ) AS GDP_growth,
 	te.population AS population_cur_y,
 	te.gini
 FROM t_ec te 
