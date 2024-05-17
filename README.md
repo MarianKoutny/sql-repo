@@ -4,7 +4,7 @@
 Repozitář obsahuje 2 SQL soubory, průvodní listinu a excel.
 
 První SQL file získává z různých zdrojů uložených v databázi (databáze obsahuje datové sady dostupné veřejně na portálu 
-Otevřená data https://opendata.gov.cz) potřebná data a na základě sady příkazů generuje 2 tabulky, ze kterých získáme potřebná data, 
+Otevřená data https://opendata.gov.cz) potřebná data a na základě sady příkazů generuje 2 tabulky, ze kterých získáme údaje, 
 abychom dostali odpovědi na předem známé výzkumné otázky.
 
 Samotný druhý SQL file pak odpovídá na otázky, které byly vytýčeny v rámci výzkumu. Celý postup je zanesen krok po kroku 
